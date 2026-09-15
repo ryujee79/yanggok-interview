@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#123a6b">
+  <title>양곡고등학교 대입 면접</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="brand" data-go="home">양곡고등학교 <b>대입 면접</b></button>
+  <nav>
+    <button data-tab="generate">생기부 맞춤면접</button>
+    <button data-tab="past">대학별 기출</button>
+    <button data-tab="common">공통질문</button>
+  </nav>
+</header>
+<main id="app">
+  <section class="loading-card">
+    <div class="spinner"></div>
+    <b>실제 기출 데이터 불러오는 중</b>
+    <span>2027 예상·예시문항과 제시문은 제외합니다.</span>
+  </section>
+</main>
+<script src="./app1.js"></script>
+<script src="./app2.js"></script>
+<script src="./app3.js"></script>
+</body>
+</html>
