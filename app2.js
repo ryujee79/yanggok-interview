@@ -1,0 +1,141 @@
+function render() {
+  document.body.dataset.tab = STATE.tab;
+  $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === STATE.tab));
+  if (STATE.tab === 'home') return renderHome();
+  if (STATE.tab === 'generate') return renderGenerate();
+  if (STATE.tab === 'past') return renderPast();
+  if (STATE.tab === 'common') return renderCommon();
+}
+function renderHome() {
+  const official = STATE.questions.filter(x => x.k === '대학공개' || x.k === '대학기출').length;
+  $('#app').innerHTML = `<section class="home">
+    <div class="hero"><span class="eyebrow">실제 기출 기반 · 무료 브라우저 분석</span>
+      <h1>생기부와 실제 면접 질문을 연결합니다</h1>
+      <p>2027 예상·예시문항과 제시문 면접은 사용하지 않습니다. 생활기록부는 브라우저 안에서만 읽고 서버로 전송하거나 저장하지 않습니다.</p>
+    </div>
+    <div class="stats">
+      <article><b>${STATE.questions.length.toLocaleString()}</b><span>2026학년도 이전 기출·후기 질문</span></article>
+      <article><b>${official.toLocaleString()}</b><span>대학 공식 공개·기출</span></article>
+      <article><b>${STATE.raw.stats.excluded2027.toLocaleString()}</b><span>제외한 2027 이후 질문</span></article>
+    </div>
+    <div class="homecards">
+      <button data-home="generate"><div class="icon">01</div><h3>생기부 맞춤면접</h3><p>생활기록부를 올리고 대학·학과·전형을 고르면 공통·학업·진로·공동체 질문을 만듭니다.</p></button>
+      <button data-home="past"><div class="icon">02</div><h3>대학별 기출</h3><p>실제 기출과 대학 공개문항, 수험생 면접 후기를 대학·학과·전형별로 확인합니다.</p></button>
+      <button data-home="common"><div class="icon">03</div><h3>공통질문</h3><p>선생님이 만든 HWPX·PDF·TXT 파일에서 공통질문을 불러와 이 브라우저에 저장합니다.</p></button>
+    </div>
+  </section><footer>양곡고등학교 대입 면접 · 생기부 원문은 외부 서버로 전송하지 않습니다.</footer>`;
+  $$('[data-home]').forEach(b => b.onclick = () => { STATE.tab = b.dataset.home; render(); });
+}
+function renderGenerate() {
+  const hasText = !!STATE.recordText;
+  const fileText = hasText ? `<div class="ok"><b>${esc(STATE.recordName)}</b>에서 텍스트를 읽었습니다. (${STATE.recordText.length.toLocaleString()}자)</div>
+    <details><summary class="muted">추출 내용 확인</summary><div class="preview">${esc(STATE.recordText.slice(0,12000))}${STATE.recordText.length>12000?'\n…':''}</div></details>` : '';
+  $('#app').innerHTML = `<section class="page">${pageHead('생기부 맞춤면접','생활기록부의 실제 활동과 선택 대학의 기출 경향을 함께 분석하여 질문을 만듭니다.')}
+    <div class="panel"><h2>1. 지원 조건</h2>${selectorHtml(STATE.selection)}</div>
+    <div class="panel"><h2>2. 생활기록부</h2>
+      <label class="filebox" id="recordDrop"><input id="recordFile" type="file" accept=".pdf,.hwpx,.txt,text/plain,application/pdf"><b>${hasText?'다른 생활기록부 선택':'생활기록부 파일 선택'}</b><span>PDF · HWPX · TXT 지원 / 구형 HWP는 HWPX로 다시 저장해 주세요.</span></label>
+      <div id="recordStatus">${fileText}</div>
+      <div class="privacy"><b>개인정보 보호</b><span>파일은 이 브라우저에서만 읽습니다. 원본 파일과 추출된 생활기록부 텍스트를 서버에 업로드하지 않습니다.</span></div>
+    </div>
+    <div class="panel"><h2>3. 면접 문항 생성</h2>
+      <p class="muted">공통질문은 등록된 공통질문 파일을 사용하고, 나머지는 생활기록부의 활동 문장과 ${esc(STATE.selection.u)} 기출 질문 패턴을 대조해 만듭니다.</p>
+      <button id="makeQuestions" class="primary" ${hasText?'':'disabled'}>맞춤 면접 문항 만들기</button>
+      <div id="genStatus"></div>
+    </div>
+    <div id="generated">${STATE.generated ? generatedHtml(STATE.generated) : ''}</div>
+  </section>`;
+  bindSelectors($('#app'), () => { STATE.generated = null; renderGenerate(); });
+  $('#recordFile').onchange = e => handleRecordFile(e.target.files[0]);
+  const drop = $('#recordDrop');
+  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault();drop.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault();drop.classList.remove('drag');}));
+  drop.addEventListener('drop', e => { const f=e.dataTransfer.files[0]; if(f) handleRecordFile(f); });
+  $('#makeQuestions').onclick = () => {
+    if (!STATE.recordText) return;
+    $('#genStatus').innerHTML = '<div class="muted">생활기록부와 실제 기출 질문을 비교하고 있습니다.</div>';
+    setTimeout(() => {
+      STATE.generated = generateQuestions();
+      $('#generated').innerHTML = generatedHtml(STATE.generated);
+      $('#genStatus').innerHTML = '';
+      $('#generated').scrollIntoView({behavior:'smooth',block:'start'});
+    }, 30);
+  };
+}
+async function handleRecordFile(file) {
+  if (!file) return;
+  const status = $('#recordStatus');
+  status.innerHTML = '<div class="muted">파일에서 텍스트를 읽는 중입니다.</div>';
+  try {
+    const text = await readDocument(file);
+    if (text.replace(/\s/g,'').length < 200) throw new Error('읽힌 텍스트가 너무 적습니다. 이미지로만 된 PDF라면 텍스트가 포함된 생활기록부 PDF를 사용해 주세요.');
+    STATE.recordText = text;
+    STATE.recordName = file.name;
+    STATE.generated = null;
+    renderGenerate();
+  } catch (e) {
+    STATE.recordText = ''; STATE.recordName = ''; STATE.generated = null;
+    status.innerHTML = `<div class="error">${esc(e.message || e)}</div>`;
+  }
+}
+async function readDocument(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'txt') return await file.text();
+  if (ext === 'hwpx') return readHwpx(file);
+  if (ext === 'pdf') return readPdf(file);
+  if (ext === 'hwp') throw new Error('구형 HWP는 브라우저에서 안정적으로 읽기 어렵습니다. 한글에서 HWPX로 다시 저장한 뒤 올려 주세요.');
+  throw new Error('PDF, HWPX, TXT 파일만 지원합니다.');
+}
+async function readHwpx(file) {
+  if (!window.JSZip) throw new Error('HWPX 읽기 모듈을 불러오지 못했습니다.');
+  const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+  const names = Object.keys(zip.files).filter(n => /^Contents\/section\d+\.xml$/i.test(n)).sort((a,b) => {
+    const na=Number(a.match(/\d+/)?.[0]||0), nb=Number(b.match(/\d+/)?.[0]||0); return na-nb;
+  });
+  if (!names.length) throw new Error('HWPX 본문을 찾지 못했습니다.');
+  const paras = [];
+  for (const name of names) {
+    const xml = await zip.file(name).async('text');
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const ps = [...doc.getElementsByTagName('*')].filter(el => el.localName === 'p');
+    for (const p of ps) {
+      const t = (p.textContent || '').replace(/\s+/g,' ').trim();
+      if (t) paras.push(t);
+    }
+  }
+  return paras.join('\n');
+}
+async function readPdf(file) {
+  let pdfjs;
+  try {
+    pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');
+    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+  } catch {
+    throw new Error('PDF 읽기 모듈을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.');
+  }
+  const pdf = await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const pages = [];
+  for (let n=1;n<=pdf.numPages;n++) {
+    const page = await pdf.getPage(n);
+    const tc = await page.getTextContent();
+    let lastY = null, line = '', out = [];
+    for (const item of tc.items) {
+      if (!('str' in item)) continue;
+      const y = item.transform?.[5] ?? null;
+      if (lastY !== null && y !== null && Math.abs(y-lastY) > 2.5) { if(line.trim()) out.push(line.trim()); line=''; }
+      line += (line ? ' ' : '') + item.str;
+      lastY = y;
+    }
+    if (line.trim()) out.push(line.trim());
+    pages.push(out.join('\n'));
+  }
+  return pages.join('\n');
+}
+function tokenize(text) {
+  const stop = new Set(['그리고','그러나','하지만','통해','대한','대해','본인','지원자','무엇','어떤','어떻게','설명','말해','주세요','있나요','있다면','관련','활동','생각']);
+  return [...new Set(String(text||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').split(/\s+/).map(x=>x.trim()).filter(x=>x.length>=2&&!stop.has(x)))];
+}
+const KEY = {
+  academic: ['교과','수업','과목','세부능력','세특','탐구','연구','실험','보고서','발표','독서','수학','과학','원리','개념','분석','프로젝트','학업','성적','학습','자료'],
+  career: ['진로','전공','학과','지원','직업','희망','관심','캠프','멘토','심화','대학','계열','진학','전문가','연계'],
+  community: ['동아리','자율','봉사','학급','회장','반장','부장','협력','갈등','배려','리더십','팀','친구','공동체','소통','역할','기여']
+};
