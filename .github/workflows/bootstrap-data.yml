@@ -30,8 +30,8 @@ jobs:
               raw=json.load(f)
           p=raw['p']
           allowed={'대학공개','대학기출','후기·기출'}
-          qlike=re.compile(r'(\?|무엇|어떤|어떻게|왜|이유|설명|말해|이야기|생각|의견|느낀|배운|지원|활동|경험|역할|과정|방법|계기|장점|단점|해결|논하|서술|제시)')
-          reject=re.compile(r'(평가요소|평가항목|배점|면접위원|면접시간|준비시간|답변시간|전형요소별|모집인원|지원인원|경쟁률|페이지|목차)')
+          qlike=re.compile(r'(\?|무엇|어떤|어떻게|왜|이유|설명|말해|이야기|생각|의견|느낀|배운|지원|활동|경험|역할|과정|방법|계기|장점|단점|해결|논하|서술)')
+          reject=re.compile(r'(제시문|평가요소|평가항목|배점|면접위원|면접시간|준비시간|답변시간|전형요소별|모집인원|지원인원|경쟁률|페이지|목차)')
 
           def year_ok(y):
               ys=[int(x) for x in re.findall(r'20\d{2}',str(y or ''))]
@@ -44,17 +44,23 @@ jobs:
               s=' '.join(str(r[6] or '').split())
               return 12 <= len(s) <= 700 and not reject.search(s) and bool(qlike.search(s))
 
+          before=len(raw['q'])
           raw['q']=[r for r in raw['q'] if good(r)]
-          assert len(raw['q'])==30915, f"unexpected question count: {len(raw['q'])}"
+          # 앱에서 쓰지 않는 예상/제시문/준비 자료는 payload에서도 제거
+          raw['passages']=[]
+          raw['prep']=[]
+          raw['common']=[]
+          raw['sourceAudit']=[]
           payload=json.dumps(raw,ensure_ascii=False,separators=(',',':')).encode('utf-8')
           packed=gzip.compress(payload,compresslevel=9)
           b64=base64.b64encode(packed).decode('ascii')
           out=Path('data')
           for old in out.glob('data-*.b64'): old.unlink()
-          size=(len(b64)+15)//16
-          for i in range(16):
+          parts=16
+          size=(len(b64)+parts-1)//parts
+          for i in range(parts):
               (out/f'data-{i+1:02}.b64').write_text(b64[i*size:(i+1)*size],encoding='utf-8')
-          print('questions=',len(raw['q']),'base64=',len(b64))
+          print('questions_before=',before,'questions_after=',len(raw['q']),'base64=',len(b64))
           PY
       - name: Commit generated data
         run: |
@@ -64,6 +70,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No data changes.'
           else
-            git commit -m 'Add filtered interview question data'
+            git commit -m 'Regenerate interview data without passage questions'
             git push
           fi
