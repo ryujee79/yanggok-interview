@@ -1,4 +1,4 @@
-const APP_VERSION = '2026-09-16-github-gas-v1';
+const APP_VERSION = '2026-09-17-github-gas-v2';
 const DEFAULT_ALLOWED_ORIGIN = 'https://ryujee79.github.io';
 const INITIAL_STUDENT_PASSWORD = '1234';
 const TOKEN_TTL_SECONDS = 21600;
