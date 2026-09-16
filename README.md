@@ -1,31 +1,58 @@
-# yanggok-interview
+# 양곡고 2027 제시문 면접 지도
 
-양곡고 2027 제시문 면접 지도 일정의 GitHub Pages 버전입니다.
+GitHub Pages 프런트엔드 + Google Apps Script 백엔드로 운영합니다.
 
-## 구성
-- `index.html` : 교사/학생 일정 조회
-- `admin.html` : 최종 엑셀과 ZIP을 브라우저에서 암호화해 배포용 파일로 만드는 도구
-- `data/schedule.enc.json` : 암호화된 일정 데이터
-- `assets/*.enc.json` : 암호화된 사용/미사용 지문 ZIP
-- `.github/workflows/pages.yml` : GitHub Pages 자동 배포
+## 웹사이트 주소
 
-## 개인정보 보호
-저장소가 공개되어 있으므로 원본 엑셀이나 원본 ZIP/PDF를 저장소에 올리지 않습니다.
-`admin.html`에서 접속암호로 암호화한 `.enc.json` 파일만 올립니다. 접속암호는 저장소에 기록하지 않습니다.
+- https://ryujee79.github.io/yanggok-interview/
 
-## GitHub Pages 최초 설정
-Repository `Settings` → `Pages` → `Build and deployment` → `Source`를 **GitHub Actions**로 선택합니다.
-이후 main 브랜치가 바뀔 때마다 Pages가 자동 배포됩니다.
+## 복원 기능
 
-예상 주소:
-`https://ryujee79.github.io/yanggok-interview/`
+- 교사: 이름 + 개인 4자리 비밀번호 로그인
+- 학생: 이름 + 초기 비밀번호 `1234`, 최초 로그인 후 개인 비밀번호 변경
+- 최종 일정 엑셀 업로드: `고려대(자연)팀` 28건 + `고려대(인문)&연세대팀` 42건 = 70건 자동 반영
+- 공동 지도교사(`윤혜영·유제호` 등) 개별 교사 일정에 모두 표시
+- 학생 답변 녹음, 업로드, 재생, 삭제
+- 담당교사 학생 녹음 확인·재생
+- 일정별 참고자료 업로드·다운로드·삭제
+- 사용 제시문 ZIP / 고려대 해설 ZIP / 미사용 지문 ZIP 업로드·다운로드
+- 제시문 PDF를 각 일정에 자동 연결
+- 교시·장소 지정, 특별실 수업시간 관리
+- 일반 면접 학생 실 직접 예약·취소
+- 전체 일정·팀 일정·학생 찾기
+- 일정 교환
+- 변경 이력
+- 여러 기기 공용 저장: Google Sheets + Google Drive
+- 약 8초 간격 자동 동기화
 
-## 자료 갱신
-1. 배포된 사이트의 `/admin.html`을 엽니다.
-2. 현재 접속암호를 입력합니다.
-3. 새 최종 엑셀을 선택해 `schedule.enc.json`을 만듭니다.
-4. 사용/미사용 ZIP도 각각 암호화 파일로 만듭니다.
-5. GitHub에서 기존 파일을 같은 이름으로 교체합니다.
-6. main 브랜치 변경 후 GitHub Pages가 자동 재배포됩니다.
+## Google Apps Script 최초 설정
 
-원본 파일은 GitHub에 직접 올리지 마세요.
+1. Google Drive에서 새 **Apps Script** 프로젝트를 만듭니다.
+2. 저장소의 `gas/Code.gs` 전체를 Apps Script의 `Code.gs`에 붙여넣습니다.
+3. 프로젝트 설정에서 `appsscript.json` 표시를 켠 뒤 저장소의 `gas/appsscript.json` 내용으로 바꿉니다.
+4. 별도로 전달받은 `양곡고_제시문면접_PRIVATE_SETUP.gs` 내용을 임시 스크립트 파일에 붙여넣습니다.
+5. `installPrivateConfig()`를 한 번 실행하고 Google Drive/Sheets 권한을 승인합니다.
+   - 데이터용 Google Sheets 자동 생성
+   - 녹음·참고자료·제시문 저장용 Google Drive 폴더 자동 생성
+   - 교사 개인 4자리 비밀번호를 Script Properties에 해시로 저장
+6. **배포 → 새 배포 → 웹 앱**
+   - 실행 사용자: 나
+   - 액세스 권한: 모든 사용자
+7. 생성된 `/exec` 주소를 복사합니다.
+8. GitHub Pages 첫 화면의 **백엔드 연결 설정**에 URL을 입력해 테스트할 수 있습니다.
+9. 최종적으로 모든 사용자에게 자동 적용하려면 `config.js`의 `apiUrl`에 해당 URL을 넣습니다.
+
+> 교사 개인 비밀번호 원문은 공개 저장소에 커밋하지 않습니다.
+
+## 일정 업로드 규칙
+
+### 고려대(자연)팀
+- 1조 학생: B:D / 담당교사 E
+- 2조 학생: F:G / 담당교사 H
+
+### 고려대(인문)&연세대팀
+- 1조 학생: B:D / 담당교사 E
+- 2조 학생: F:H / 담당교사 I
+- 3조 학생: J:L / 담당교사 M
+
+날짜는 `10월 12(월)` 형식으로 읽으며 업로드 시 최종 70건인지 검사합니다.
