@@ -95,7 +95,11 @@ async function loadSchedule(password) {
     );
     envelope = JSON.parse(chunks.join(''));
   }
-  const bytes = await decryptEnvelope(envelope, password);
+  let bytes = await decryptEnvelope(envelope, password);
+  if (envelope.compression === 'gzip') {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  }
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
