@@ -1,5 +1,6 @@
 function login_(payload) {
-  setupSystem();
+  const props = PropertiesService.getScriptProperties();
+  if (!props.getProperty('DATA_SPREADSHEET_ID') || !props.getProperty('DATA_FOLDER_ID')) setupSystem();
   const role = String(payload.role || '');
   const name = String(payload.name || '').trim();
   const password = String(payload.password || '');
