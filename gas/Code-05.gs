@@ -47,6 +47,12 @@ function validateOrigin_(origin) {
 function iframeResponse_(origin, result) {
   const json = JSON.stringify(result).replace(/</g, '\\u003c');
   const target = JSON.stringify(origin || DEFAULT_ALLOWED_ORIGIN);
-  return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>parent.postMessage(' + json + ',' + target + ');</script>')
+  const html = '<!doctype html><html><head><meta charset="utf-8"></head><body><script>' +
+    '(function(){var msg=' + json + ';var target=' + target + ';' +
+    'try{window.top.postMessage(msg,target);}catch(e){}' +
+    'try{if(window.parent!==window.top){window.parent.postMessage(msg,target);}}catch(e){}' +
+    '})();' +
+    '</script></body></html>';
+  return HtmlService.createHtmlOutput(html)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
