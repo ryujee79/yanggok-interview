@@ -15,8 +15,17 @@ function sheetName_(key) {
 }
 
 function getSheet_(key) {
-  ensureAllSheets_();
-  return SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('DATA_SPREADSHEET_ID')).getSheetByName(sheetName_(key));
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('DATA_SPREADSHEET_ID');
+  if (!spreadsheetId) throw new Error('데이터 스프레드시트가 설정되지 않았습니다. setupSystem()을 실행해 주세요.');
+  const ss = SpreadsheetApp.openById(spreadsheetId);
+  const name = sheetName_(key);
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    const headers = SHEETS[key];
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+  }
+  return sheet;
 }
 
 function readObjects_(key) {
