@@ -21,6 +21,8 @@ jobs:
             echo "Checking $f"
             node --check "$f"
           done
+      - name: Test content-aware schedule parser
+        run: node tests/schedule-parser.test.js
       - name: Build and check Apps Script
         run: |
           cat gas/Code-*.gs > gas/Code.gs
