@@ -28,6 +28,8 @@ jobs:
           cat gas/Code-*.gs > gas/Code.gs
           cp gas/Code.gs /tmp/Code.js
           node --check /tmp/Code.js
+      - name: Test room and interview conflicts
+        run: node tests/conflict-logic.test.js
       - name: Keep combined Code.gs in migration branch
         run: |
           if git diff --quiet -- gas/Code.gs && git ls-files --error-unmatch gas/Code.gs >/dev/null 2>&1; then
