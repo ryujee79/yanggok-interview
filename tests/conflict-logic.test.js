@@ -51,20 +51,40 @@ assert.strictEqual(context.sessionLooseIdentityKey_({...base,period:'오전'}), 
 assert.strictEqual(context.normalizeDateKey_('2026-09-17'), '2026-09-17');
 assert.strictEqual(context.normalizeDateKey_('2026-09-17T00:00:00.000Z'), '2026-09-17');
 
+context.requireAuth_ = () => ({role:'teacher', name:'유제호'});
+context.LockService = { getScriptLock: () => ({ waitLock(){}, releaseLock(){} }) };
+context.addHistory_ = () => {};
+context.sessionConflict_ = () => '';
+
 // 장소만 바꿀 때 기존 교시가 사라지면 안 된다.
 let sessionRows = [{
   id:'patch', team:'humanities', group:'1조', dateText:'10월 12일 (월)', period:'전체', slotIndex:0,
   classPeriod:7, teacher:'유제호', teachers:JSON.stringify(['유제호']), students:JSON.stringify(['한지민']),
   prompt:'지문', pdfFile:'지문.pdf', location:'미정', updatedAt:''
 }];
-context.requireAuth_ = () => ({role:'teacher', name:'유제호'});
-context.LockService = { getScriptLock: () => ({ waitLock(){}, releaseLock(){} }) };
 context.readObjects_ = key => key === 'sessions' ? sessionRows : [];
 context.writeObjects_ = (key, rows) => { if (key === 'sessions') sessionRows = rows; };
-context.addHistory_ = () => {};
-context.sessionConflict_ = () => '';
 const changed = context.changeSession_({id:'patch', location:'과학실1'});
 assert.strictEqual(changed.session.classPeriod, 7);
 assert.strictEqual(changed.session.location, '과학실1');
+
+// 엑셀 형식이 오전 -> 전체처럼 바뀌어도 같은 일정이면 기존 ID를 유지해야 녹음/참고자료 연결이 끊기지 않는다.
+sessionRows = [{
+  id:'stable-old-id', team:'humanities', group:'1조', dateText:'10월 12일 (월)', period:'오전', slotIndex:0,
+  classPeriod:3, teacher:'유제호', teachers:JSON.stringify(['유제호']), students:JSON.stringify(['한지민']),
+  prompt:'고려대 지문 (준비 8분 + 면접 5분)', pdfFile:'고려대_지문.pdf', location:'과학실1', updatedAt:''
+}];
+let writtenSessions = [];
+context.readObjects_ = key => key === 'sessions' ? sessionRows : [];
+context.writeObjects_ = (key, rows) => { if (key === 'sessions') writtenSessions = rows; };
+context.syncStudents_ = () => {};
+const uploaded = context.uploadSchedule_({sessions:[{
+  id:'new-parser-id', team:'humanities', group:'1조', dateText:'10월 12일 (월)', period:'전체', slotIndex:0,
+  teacher:'유제호', teachers:['유제호'], students:['한지민'], prompt:'고려대 지문 (준비 8분 + 면접 5분)', pdfFile:'고려대_지문.pdf'
+}]});
+assert.strictEqual(uploaded.sessions[0].id, 'stable-old-id');
+assert.strictEqual(uploaded.sessions[0].classPeriod, 3);
+assert.strictEqual(uploaded.sessions[0].location, '과학실1');
+assert.strictEqual(JSON.parse(writtenSessions[0].students)[0], '한지민');
 
 console.log('conflict logic tests passed');
