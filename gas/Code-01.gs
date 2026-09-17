@@ -1,4 +1,4 @@
-const APP_VERSION = '2026-09-17-github-gas-v2';
+const APP_VERSION = '2026-09-17-appdeploy-v42-migration-v3';
 const DEFAULT_ALLOWED_ORIGIN = 'https://ryujee79.github.io';
 const INITIAL_STUDENT_PASSWORD = '1234';
 const TOKEN_TTL_SECONDS = 21600;
@@ -57,8 +57,28 @@ function systemStatus() {
 }
 
 function doGet(e) {
+  const callback = String(e && e.parameter && e.parameter.callback || '');
+  const raw = String(e && e.parameter && e.parameter.payload || '');
+  if (callback && raw) {
+    if (!/^[A-Za-z_$][A-Za-z0-9_$]{0,80}$/.test(callback)) return ContentService.createTextOutput('/* invalid callback */').setMimeType(ContentService.MimeType.JAVASCRIPT);
+    let requestId = '';
+    try {
+      const payload = JSON.parse(raw);
+      requestId = String(payload.requestId || '');
+      validateOrigin_(String(payload.origin || DEFAULT_ALLOWED_ORIGIN));
+      const data = dispatch_(payload);
+      return jsonpResponse_(callback, { requestId, ok:true, data });
+    } catch (err) {
+      return jsonpResponse_(callback, { requestId, ok:false, error:err && err.message ? err.message : String(err) });
+    }
+  }
   return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><title>양곡고 면접 API</title><body style="font-family:sans-serif;padding:24px"><h2>양곡고 2027 제시문 면접 API</h2><p>GitHub Pages 웹앱에서 사용하는 백엔드입니다.</p><p>버전: ' + APP_VERSION + '</p></body>')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function jsonpResponse_(callback, result) {
+  const json = JSON.stringify(result).replace(/</g, '\\u003c');
+  return ContentService.createTextOutput(callback + '(' + json + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
 function doPost(e) {
