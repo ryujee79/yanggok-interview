@@ -265,8 +265,12 @@ function changeSession_(payload) {
     const idx = sessions.findIndex(s => s.id === String(payload.id || ''));
     if (idx < 0) throw new Error('일정을 찾지 못했습니다.');
     const current = sessions[idx];
-    const nextPeriod = payload.classPeriod === '' || payload.classPeriod == null ? '' : Number(payload.classPeriod);
-    const nextLocation = String(payload.location == null ? current.location : payload.location);
+    const hasClassPeriod = Object.prototype.hasOwnProperty.call(payload, 'classPeriod');
+    const hasLocation = Object.prototype.hasOwnProperty.call(payload, 'location');
+    const nextPeriod = hasClassPeriod
+      ? (payload.classPeriod === '' || payload.classPeriod == null ? '' : Number(payload.classPeriod))
+      : current.classPeriod;
+    const nextLocation = hasLocation ? String(payload.location == null ? '미정' : payload.location) : current.location;
     if (nextPeriod !== '' && (!Number.isInteger(nextPeriod) || nextPeriod < 1 || nextPeriod > 8)) throw new Error('교시는 1~8교시 중에서 선택해 주세요.');
     if (nextPeriod !== '' && current.period === '오전' && nextPeriod > 4) throw new Error('오전 일정은 1~4교시에서 선택해 주세요.');
     if (nextPeriod !== '' && current.period === '오후' && nextPeriod < 5) throw new Error('오후 일정은 5~8교시에서 선택해 주세요.');
@@ -287,7 +291,7 @@ function changeSession_(payload) {
 
 function createManualBooking_(payload) {
   const auth = requireAuth_(payload, 'teacher');
-  const dateKey = String(payload.dateKey || '');
+  const dateKey = normalizeDateKey_(payload.dateKey);
   const period = Number(payload.period);
   const room = String(payload.room || '');
   const student = String(payload.student || '').trim();
@@ -302,7 +306,7 @@ function createManualBooking_(payload) {
     if (sessionConflict) throw new Error('해당 교시에는 기존 제시문 면접 일정과 겹치는 교사·학생·장소가 있습니다.');
     const bookings = readObjects_('bookings').map(normalizeNumbers_);
     const exact = bookings.find(b => b.dateKey === dateKey && Number(b.period) === period && b.teacher === auth.name && b.student === student && b.room === room);
-    if (exact) return { booking:exact, duplicate:true };
+    if (exact) return { bookings, booking:exact, duplicate:true };
     const bookingConflict = bookings.find(b => b.dateKey === dateKey && Number(b.period) === period && (b.teacher === auth.name || b.student === student || b.room === room));
     if (bookingConflict) throw new Error('해당 교시에는 이미 직접 예약된 교사·학생·장소가 있습니다.');
     const booking = { id: 'manual-' + new Date().getTime() + '-' + Math.random().toString(36).slice(2,8), dateKey, period, room, teacher: auth.name, student, createdAt: new Date().toISOString() };
@@ -310,7 +314,7 @@ function createManualBooking_(payload) {
     writeObjects_('bookings', bookings);
     syncManualStudent_(student);
     addHistory_(auth.name, '면접실 직접 예약', dateKey + ' ' + period + '교시 ' + room + ' · ' + student);
-    return { booking };
+    return { bookings, booking };
   } finally {
     lock.releaseLock();
   }
@@ -325,9 +329,10 @@ function cancelManualBooking_(payload) {
     const bookings = readObjects_('bookings').map(normalizeNumbers_);
     const current = bookings.find(x => x.id === id);
     if (!current) throw new Error('예약을 찾지 못했습니다.');
-    writeObjects_('bookings', bookings.filter(x => x.id !== id));
+    const next = bookings.filter(x => x.id !== id);
+    writeObjects_('bookings', next);
     addHistory_(auth.name, '면접실 직접 예약 취소', current.dateKey + ' ' + current.period + '교시 ' + current.room + ' · ' + current.student);
-    return { cancelled: true };
+    return { bookings: next, cancelled: true };
   } finally {
     lock.releaseLock();
   }
