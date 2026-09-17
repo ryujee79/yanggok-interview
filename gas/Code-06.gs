@@ -8,6 +8,7 @@ function ensureAllSheets_() {
     if (sheet.getLastRow() === 0) sheet.getRange(1,1,1,headers.length).setValues([headers]);
     else sheet.getRange(1,1,1,headers.length).setValues([headers]);
   });
+  SpreadsheetApp.flush();
 }
 
 function sheetName_(key) {
@@ -24,6 +25,7 @@ function getSheet_(key) {
     sheet = ss.insertSheet(name);
     const headers = SHEETS[key];
     sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    SpreadsheetApp.flush();
   }
   return sheet;
 }
@@ -45,11 +47,15 @@ function writeObjects_(key, objects) {
   const sheet = getSheet_(key);
   const headers = SHEETS[key];
   if (sheet.getLastRow() > 1) sheet.getRange(2,1,sheet.getLastRow()-1,headers.length).clearContent();
-  if (!objects.length) return;
+  if (!objects.length) {
+    SpreadsheetApp.flush();
+    return;
+  }
   const rows = objects.map(obj => headers.map(h => obj[h] == null ? '' : obj[h]));
   const dateKeyIndex = headers.indexOf('dateKey');
   if (dateKeyIndex >= 0) sheet.getRange(2,dateKeyIndex+1,rows.length,1).setNumberFormat('@');
   sheet.getRange(2,1,rows.length,headers.length).setValues(rows);
+  SpreadsheetApp.flush();
 }
 
 function encodeSession_(s) {
