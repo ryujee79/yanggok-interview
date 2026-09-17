@@ -597,12 +597,12 @@ function sessionConflict_(candidate, otherSessions, bookings, roomUses) {
     const use = uses.find(x => roomUseMatches_(x, dateKey, Number(candidate.classPeriod), candidate.location));
     if (use) return candidate.location + '은 ' + candidate.classPeriod + '교시에 ' + use.label + '이 있어 선택할 수 없습니다.';
   }
-  const other = otherSessions.find(s => s.dateText === candidate.dateText && Number(s.classPeriod) === Number(candidate.classPeriod) && (
+  const other = otherSessions.find(s => dateKeyForDateText_(s.dateText) === dateKey && Number(s.classPeriod) === Number(candidate.classPeriod) && (
     overlap_((s.teachers && s.teachers.length ? s.teachers : splitTeachers_(s.teacher)), candidateTeachers) || overlap_(s.students || [], candidate.students || []) ||
     (candidate.location !== '미정' && s.location === candidate.location)
   ));
   if (other) return candidate.dateText + ' ' + candidate.classPeriod + '교시에 교사·학생·장소 일정이 겹칩니다.';
-  const booking = bookings.find(b => b.dateKey === dateKey && Number(b.period) === Number(candidate.classPeriod) && (
+  const booking = bookings.find(b => normalizeDateKey_(b.dateKey) === dateKey && Number(b.period) === Number(candidate.classPeriod) && (
     candidateTeachers.includes(b.teacher) || (candidate.students || []).includes(b.student) ||
     (candidate.location !== '미정' && candidate.location === b.room)
   ));
@@ -621,11 +621,12 @@ function sessionLooseIdentityKey_(s) {
 function syncStudents_(sessions) {
   const current = readObjects_('users');
   const map = {};
-  current.forEach(u => map[u.name] = u);
+  current.forEach(u => { if (u.name) map[String(u.name).trim()] = u; });
   const manualNames = readObjects_('bookings').map(b => String(b.student || '').trim()).filter(Boolean);
-  const names = Array.from(new Set(sessions.reduce((acc, s) => acc.concat(s.students || []), []).concat(manualNames))).filter(Boolean).sort();
+  const activeNames = Array.from(new Set(sessions.reduce((acc, s) => acc.concat(s.students || []), []).concat(manualNames))).filter(Boolean);
   const now = new Date().toISOString();
-  const next = names.map(name => map[name] || { name, passwordHash:'', updatedAt:now });
+  activeNames.forEach(name => { if (!map[name]) map[name] = { name, passwordHash:'', updatedAt:now }; });
+  const next = Object.keys(map).sort((a,b) => a.localeCompare(b,'ko')).map(name => map[name]);
   writeObjects_('users', next);
 }
 
@@ -635,6 +636,7 @@ function syncManualStudent_(name) {
   const users = readObjects_('users');
   if (users.some(u => u.name === student)) return;
   users.push({ name:student, passwordHash:'', updatedAt:new Date().toISOString() });
+  users.sort((a,b) => String(a.name || '').localeCompare(String(b.name || ''),'ko'));
   writeObjects_('users', users);
 }
 
