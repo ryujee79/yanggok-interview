@@ -1,18 +1,25 @@
 function bindMainEvents(){
-  qs('#logoutBtn')?.addEventListener('click',logout);qs('#refreshBtn')?.addEventListener('click',()=>refreshState(true));
-  qs('#studentSearch')?.addEventListener('input',e=>{state.studentQuery=e.target.value;render();});qs('#clearStudentSearch')?.addEventListener('click',()=>{state.studentQuery='';render();});
+  qs('#logoutBtn')?.addEventListener('click',logout);
+  qs('#refreshBtn')?.addEventListener('click',()=>refreshState(true));
+  qs('#studentSearch')?.addEventListener('input',e=>{state.studentQuery=e.target.value;render();});
+  qs('#clearStudentSearch')?.addEventListener('click',()=>{state.studentQuery='';render();});
   qsa('[data-view-team]').forEach(b=>b.onclick=()=>{state.modal='team';state.modalData=b.dataset.viewTeam;render();});
-  qs('#scheduleUploadBtn')?.addEventListener('click',()=>qs('#scheduleFile').click());qs('#scheduleFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)uploadScheduleFile(f);e.target.value='';});
+  qs('#scheduleUploadBtn')?.addEventListener('click',()=>qs('#scheduleFile').click());
+  qs('#scheduleFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)uploadScheduleFile(f);e.target.value='';});
   qs('#materialUploadBtn')?.addEventListener('click',()=>{state.modal='materialUpload';state.modalData=null;render();});
-  qs('#roomBtn')?.addEventListener('click',()=>{state.modal='rooms';state.modalData={date:'2026-10-12'};render();});
-  qs('#roomManageBtn')?.addEventListener('click',()=>{state.modal='roomManage';state.modalData={date:'2026-10-12'};render();});
-  qs('#historyBtn')?.addEventListener('click',()=>{state.modal='history';render();});
+  qs('#roomManageBtn')?.addEventListener('click',()=>{state.modal='roomManage';state.modalData=null;render();});
+  qs('#historyBtn')?.addEventListener('click',()=>{state.modal='history';state.modalData=null;render();});
+  qs('#roomDate')?.addEventListener('change',e=>{state.usageDate=e.target.value||localTodayDateKey();render();});
+  qs('#prevRoomDate')?.addEventListener('click',()=>{state.usageDate=shiftDateKey(state.usageDate,-1);render();});
+  qs('#nextRoomDate')?.addEventListener('click',()=>{state.usageDate=shiftDateKey(state.usageDate,1);render();});
+  qsa('[data-jump-date]').forEach(b=>b.onclick=()=>{state.usageDate=b.dataset.jumpDate||state.usageDate;render();});
   bindDynamicEvents();
 }
 
 function bindDynamicEvents(){
-  qs('#modalBackdrop')?.addEventListener('click',()=>{ if(state.auth?.mustChange)return; state.modal=null;state.modalData=null;render();});
-  qs('#closeModal')?.addEventListener('click',()=>{state.modal=null;state.modalData=null;render();});
+  qs('#modalBackdrop')?.addEventListener('click',()=>{if(state.auth?.mustChange)return;state.modal=null;state.modalData=null;state.error='';render();});
+  qs('#closeModal')?.addEventListener('click',()=>{state.modal=null;state.modalData=null;state.error='';render();});
+  qs('#closeModal2')?.addEventListener('click',()=>{state.modal=null;state.modalData=null;state.error='';render();});
   qs('#saveNewPassword')?.addEventListener('click',changePassword);
   qsa('[data-download-material]').forEach(b=>b.onclick=()=>b.dataset.downloadMaterial&&downloadMaterial(b.dataset.downloadMaterial,false));
   qsa('[data-play-material]').forEach(b=>b.onclick=()=>downloadMaterial(b.dataset.playMaterial,true));
@@ -30,9 +37,11 @@ function bindDynamicEvents(){
   qsa('[data-rec-upload]').forEach(b=>b.onclick=()=>uploadRecording(b.dataset.recUpload));
   qsa('[data-rec-reset]').forEach(b=>b.onclick=()=>resetRecording(b.dataset.recReset));
   qs('#uploadMaterialNow')?.addEventListener('click',uploadMaterialZip);
-  qs('#roomDate')?.addEventListener('change',e=>{state.modalData={date:e.target.value};render();});
   qsa('[data-room-cell]').forEach(b=>b.onclick=()=>roomCellAction(b));
-  qs('#useMode')?.addEventListener('change',e=>{qs('#useDate').classList.toggle('hidden',e.target.value!=='date');qs('#useWeekday').classList.toggle('hidden',e.target.value!=='weekly');});
+  qsa('[data-cancel-booking]').forEach(b=>b.onclick=()=>cancelBookingById(b.dataset.cancelBooking));
+  qs('#saveBookingNow')?.addEventListener('click',saveBookingFromModal);
+  qs('#cancelBookingNow')?.addEventListener('click',cancelBookingFromModal);
+  qs('#useMode')?.addEventListener('change',e=>{const date=e.target.value==='date';qs('#dateWrap')?.classList.toggle('hidden',!date);qs('#weeklyWrap')?.classList.toggle('hidden',date);});
   qs('#addRoomUse')?.addEventListener('click',addRoomUse);
   qsa('[data-delete-room-use]').forEach(b=>b.onclick=()=>deleteRoomUse(b.dataset.deleteRoomUse));
 }
