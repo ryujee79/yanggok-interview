@@ -232,6 +232,7 @@ function uploadSchedule_(payload) {
       const looseMatches = oldByLoose[sessionLooseIdentityKey_(base)] || [];
       const old = exact || (looseMatches.length === 1 ? looseMatches[0] : null);
       if (old) {
+        base.id = old.id || base.id;
         base.classPeriod = old.classPeriod || '';
         base.location = old.location && old.location !== '미정' ? old.location : '미정';
       }
@@ -240,6 +241,8 @@ function uploadSchedule_(payload) {
     if (normalized.some(s => !s.id || !['natural','humanities'].includes(s.team) || !s.group || !s.dateText || !s.teacher || !s.students.length || !s.prompt)) throw new Error('일정에 필수 값이 빠져 있습니다.');
     const keys = normalized.map(sessionIdentityKey_);
     if (new Set(keys).size !== keys.length) throw new Error('같은 팀·날짜·조·학생 일정이 중복되어 있습니다.');
+    const ids = normalized.map(s => s.id);
+    if (new Set(ids).size !== ids.length) throw new Error('같은 일정 ID가 중복되어 있습니다. 엑셀 내용을 확인해 주세요.');
     const bookings = readObjects_('bookings').map(normalizeNumbers_);
     const roomUses = readObjects_('roomUses').map(normalizeNumbers_);
     normalized.forEach(s => {
