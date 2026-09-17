@@ -1,4 +1,4 @@
-const APP_VERSION = '2026-09-17-appdeploy-v42-migration-v5';
+const APP_VERSION = '2026-09-17-appdeploy-v42-migration-v6';
 const DEFAULT_ALLOWED_ORIGIN = 'https://ryujee79.github.io';
 const INITIAL_STUDENT_PASSWORD = '1234';
 const TOKEN_TTL_SECONDS = 21600;
@@ -110,8 +110,6 @@ function dispatch_(payload) {
     case 'addRoomUse': return addRoomUse_(payload);
     case 'deleteRoomUse': return deleteRoomUse_(payload);
     case 'swapSessions': return swapSessions_(payload);
-    case 'uploadRecording': return uploadRecording_(payload);
-    case 'deleteRecording': return deleteRecording_(payload);
     case 'uploadReference': return uploadReference_(payload);
     case 'deleteReference': return deleteReference_(payload);
     case 'uploadMaterialZip': return uploadMaterialZip_(payload);
