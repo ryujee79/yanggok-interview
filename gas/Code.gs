@@ -579,9 +579,10 @@ function downloadMaterial_(payload) {
   if (auth.role === 'student') {
     const sessions = readObjects_('sessions').map(decodeSession_).filter(s => s.students.includes(auth.name));
     const sessionIds = new Set(sessions.map(s => s.id));
-    const teams = new Set(sessions.map(s => s.team));
+    const promptCanonicals = new Set(sessions.map(s => canonical_(s.pdfFile || firstLine_(s.prompt))));
+    const materialCanonical = String(current.canonical || canonical_(current.fileName));
     const allowed = (current.kind === 'recording' && current.student === auth.name && sessionIds.has(current.sessionId)) ||
-      (['prompt','solution'].includes(current.kind) && teams.has(current.team));
+      (['prompt','solution'].includes(current.kind) && promptCanonicals.has(materialCanonical));
     if (!allowed) throw new Error('이 자료를 내려받을 권한이 없습니다.');
   }
   const file = DriveApp.getFileById(current.fileId);
