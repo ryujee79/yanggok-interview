@@ -4,10 +4,9 @@ function bindMainEvents(){
   qs('#studentSearch')?.addEventListener('input',e=>{state.studentQuery=e.target.value;render();});
   qs('#clearStudentSearch')?.addEventListener('click',()=>{state.studentQuery='';render();});
   qsa('[data-view-team]').forEach(b=>b.onclick=()=>{state.modal='team';state.modalData=b.dataset.viewTeam;render();});
-  qs('#scheduleUploadBtn')?.addEventListener('click',()=>qs('#scheduleFile').click());
-  qs('#scheduleFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)uploadScheduleFile(f);e.target.value='';});
-  qs('#materialUploadBtn')?.addEventListener('click',()=>{state.modal='materialUpload';state.modalData=null;render();});
-  qs('#roomManageBtn')?.addEventListener('click',()=>{state.modal='roomManage';state.modalData=null;render();});
+  qs('#scheduleUploadBtn')?.addEventListener('click',()=>{state.notice='';state.error='';state.modal='scheduleUpload';state.modalData=null;render();});
+  qs('#materialUploadBtn')?.addEventListener('click',()=>{state.modal='materialUpload';state.modalData=null;state.error='';render();});
+  qs('#roomManageBtn')?.addEventListener('click',()=>{state.modal='roomManage';state.modalData=null;state.error='';render();});
   qs('#historyBtn')?.addEventListener('click',()=>{state.modal='history';state.modalData=null;render();});
   qs('#roomDate')?.addEventListener('change',e=>{state.usageDate=e.target.value||localTodayDateKey();render();});
   qs('#prevRoomDate')?.addEventListener('click',()=>{state.usageDate=shiftDateKey(state.usageDate,-1);render();});
@@ -21,6 +20,7 @@ function bindDynamicEvents(){
   qs('#closeModal')?.addEventListener('click',()=>{state.modal=null;state.modalData=null;state.error='';render();});
   qs('#closeModal2')?.addEventListener('click',()=>{state.modal=null;state.modalData=null;state.error='';render();});
   qs('#saveNewPassword')?.addEventListener('click',changePassword);
+  qs('#scheduleFileModal')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)uploadScheduleFile(f);e.target.value='';});
   qsa('[data-download-material]').forEach(b=>b.onclick=()=>b.dataset.downloadMaterial&&downloadMaterial(b.dataset.downloadMaterial,false));
   qsa('[data-play-material]').forEach(b=>b.onclick=()=>downloadMaterial(b.dataset.playMaterial,true));
   qsa('[data-delete-reference]').forEach(b=>b.onclick=()=>deleteReference(b.dataset.deleteReference));
