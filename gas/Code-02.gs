@@ -71,10 +71,10 @@ function getState_(payload) {
     const sessions = sessionsAll.filter(s => s.students.includes(auth.name));
     const ownBookings = bookings.filter(b => b.student === auth.name);
     const sessionIds = new Set(sessions.map(s => s.id));
-    const teams = new Set(sessions.map(s => s.team));
+    const promptCanonicals = new Set(sessions.map(s => canonical_(s.pdfFile || firstLine_(s.prompt))));
     const visibleMaterials = materials.filter(m =>
       (m.kind === 'recording' && m.student === auth.name && sessionIds.has(m.sessionId)) ||
-      (['prompt','solution'].includes(m.kind) && teams.has(m.team))
+      (['prompt','solution'].includes(m.kind) && promptCanonicals.has(String(m.canonical || canonical_(m.fileName))))
     );
     return { auth, sessions, manualBookings: ownBookings, roomUses: [], history: [], materials: visibleMaterials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
   }
