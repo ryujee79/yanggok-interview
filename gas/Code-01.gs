@@ -1,4 +1,4 @@
-const APP_VERSION = '2026-09-17-appdeploy-v42-migration-v4';
+const APP_VERSION = '2026-09-17-appdeploy-v42-migration-v5';
 const DEFAULT_ALLOWED_ORIGIN = 'https://ryujee79.github.io';
 const INITIAL_STUDENT_PASSWORD = '1234';
 const TOKEN_TTL_SECONDS = 21600;
