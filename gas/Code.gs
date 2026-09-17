@@ -184,17 +184,13 @@ function getState_(payload) {
   const sessionsAll = readObjects_('sessions').map(decodeSession_);
   const bookings = readObjects_('bookings').map(normalizeNumbers_);
   const roomUses = readObjects_('roomUses').map(normalizeNumbers_);
-  const materials = readObjects_('materials');
+  const materials = readObjects_('materials').filter(m => m.kind !== 'recording');
   const history = readObjects_('history').slice(-200).reverse();
   if (auth.role === 'student') {
     const sessions = sessionsAll.filter(s => s.students.includes(auth.name));
     const ownBookings = bookings.filter(b => b.student === auth.name);
-    const sessionIds = new Set(sessions.map(s => s.id));
     const promptCanonicals = new Set(sessions.map(s => canonical_(s.pdfFile || firstLine_(s.prompt))));
-    const visibleMaterials = materials.filter(m =>
-      (m.kind === 'recording' && m.student === auth.name && sessionIds.has(m.sessionId)) ||
-      (['prompt','solution'].includes(m.kind) && promptCanonicals.has(String(m.canonical || canonical_(m.fileName))))
-    );
+    const visibleMaterials = materials.filter(m => ['prompt','solution'].includes(m.kind) && promptCanonicals.has(String(m.canonical || canonical_(m.fileName))));
     return { auth, sessions, manualBookings: ownBookings, roomUses: [], history: [], materials: visibleMaterials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
   }
   return { auth, sessions: sessionsAll, manualBookings: bookings, roomUses, history, materials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
