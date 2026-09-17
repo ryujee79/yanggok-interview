@@ -6,20 +6,40 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   syntax:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: appdeploy-v42-migration
       - name: Check frontend JavaScript
         run: |
           for f in app-*.js config.js; do
             echo "Checking $f"
             node --check "$f"
           done
-      - name: Check Apps Script syntax
+      - name: Build and check Apps Script
         run: |
-          cat gas/Code-*.gs > /tmp/Code.js
+          cat gas/Code-*.gs > gas/Code.gs
+          cp gas/Code.gs /tmp/Code.js
           node --check /tmp/Code.js
+      - name: Keep combined Code.gs in migration branch
+        run: |
+          if git diff --quiet -- gas/Code.gs && git ls-files --error-unmatch gas/Code.gs >/dev/null 2>&1; then
+            echo "Code.gs already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gas/Code.gs
+          git commit -m "Build combined Code.gs [skip ci]"
+          git push origin HEAD:appdeploy-v42-migration
+      - name: Upload Code.gs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yanggok-interview-Code-gs
+          path: gas/Code.gs
+          retention-days: 14
