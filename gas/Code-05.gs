@@ -24,6 +24,10 @@ function sessionIdentityKey_(s) {
   return [String(s.team || ''), String(s.dateText || ''), String(s.period || '전체'), String(s.group || ''), (s.students || []).map(String).map(x=>x.trim()).sort().join('|')].join('::');
 }
 
+function sessionLooseIdentityKey_(s) {
+  return [String(s.team || ''), String(s.dateText || ''), String(s.group || ''), (s.students || []).map(String).map(x=>x.trim()).sort().join('|')].join('::');
+}
+
 function syncStudents_(sessions) {
   const current = readObjects_('users');
   const map = {};
