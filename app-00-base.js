@@ -7,7 +7,7 @@ const state = {
   role: localStorage.getItem('yi-role') || 'teacher',
   token: localStorage.getItem('yi-token') || '',
   auth:null,data:null,notice:'',error:'',studentQuery:'',modal:null,modalData:null,busy:'',
-  recorder:{},audioUrls:{},lastStateAt:0,usageDate:localTodayDateKey(),selectedTeam:null
+  lastStateAt:0,usageDate:localTodayDateKey(),selectedTeam:null
 };
 const qs=(s,root=document)=>root.querySelector(s);
 const qsa=(s,root=document)=>[...root.querySelectorAll(s)];
