@@ -8,7 +8,14 @@ function uploadSchedule_(payload) {
     const oldSessions = readObjects_('sessions').map(decodeSession_);
     const oldById = {};
     const oldByKey = {};
-    oldSessions.forEach(s => { oldById[s.id] = s; oldByKey[sessionIdentityKey_(s)] = s; });
+    const oldByLoose = {};
+    oldSessions.forEach(s => {
+      oldById[s.id] = s;
+      oldByKey[sessionIdentityKey_(s)] = s;
+      const loose = sessionLooseIdentityKey_(s);
+      if (!oldByLoose[loose]) oldByLoose[loose] = [];
+      oldByLoose[loose].push(s);
+    });
     const now = new Date().toISOString();
     const normalized = incoming.map((s, index) => {
       const teachers = splitTeachers_(s.teacher || (Array.isArray(s.teachers) ? s.teachers.join('·') : ''));
@@ -18,7 +25,9 @@ function uploadSchedule_(payload) {
         period: String(s.period || '전체'), slotIndex: Number(s.slotIndex == null ? index : s.slotIndex), teacher: teachers.join('·'), teachers, students,
         prompt: String(s.prompt || ''), pdfFile: String(s.pdfFile || ''), classPeriod:'', location:'미정', updatedAt:now
       };
-      const old = oldById[base.id] || oldByKey[sessionIdentityKey_(base)];
+      const exact = oldById[base.id] || oldByKey[sessionIdentityKey_(base)];
+      const looseMatches = oldByLoose[sessionLooseIdentityKey_(base)] || [];
+      const old = exact || (looseMatches.length === 1 ? looseMatches[0] : null);
       if (old) {
         base.classPeriod = old.classPeriod || '';
         base.location = old.location && old.location !== '미정' ? old.location : '미정';
