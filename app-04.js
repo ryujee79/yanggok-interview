@@ -36,6 +36,7 @@ function bindDynamicEvents(){
   qsa('[data-rec-resume]').forEach(b=>b.onclick=()=>resumeRecording(b.dataset.recResume));
   qsa('[data-rec-restart]').forEach(b=>b.onclick=()=>restartRecording(b.dataset.recRestart));
   qsa('[data-rec-stop]').forEach(b=>b.onclick=()=>stopRecording(b.dataset.recStop));
+  qsa('[data-rec-upload]').forEach(b=>b.onclick=()=>uploadRecording(b.dataset.recUpload));
   qs('#uploadMaterialNow')?.addEventListener('click',uploadMaterialZip);
   qsa('[data-room-cell]').forEach(b=>b.onclick=()=>roomCellAction(b));
   qsa('[data-cancel-booking]').forEach(b=>b.onclick=()=>cancelBookingById(b.dataset.cancelBooking));
