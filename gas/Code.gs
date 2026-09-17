@@ -131,11 +131,11 @@ function login_(payload) {
     if (!hashes[name] || hashes[name] !== hash_(password)) throw new Error('교사 이름 또는 비밀번호가 맞지 않습니다.');
     return issueToken_(role, name, false);
   }
+  const sessions = readObjects_('sessions').map(decodeSession_);
+  const bookings = readObjects_('bookings').map(normalizeNumbers_);
+  const isActiveStudent = sessions.some(s => (s.students || []).includes(name)) || bookings.some(b => String(b.student || '').trim() === name);
+  if (!isActiveStudent) throw new Error('등록된 학생 이름을 찾지 못했습니다. 일정 엑셀을 먼저 업로드해 주세요.');
   const user = getUser_(name);
-  if (!user) {
-    const manual = readObjects_('bookings').some(b => String(b.student || '').trim() === name);
-    if (!manual) throw new Error('등록된 학생 이름을 찾지 못했습니다. 일정 엑셀을 먼저 업로드해 주세요.');
-  }
   const mustChange = !user || !user.passwordHash;
   if (mustChange) {
     if (password !== INITIAL_STUDENT_PASSWORD) throw new Error('학생 이름 또는 비밀번호가 맞지 않습니다.');
