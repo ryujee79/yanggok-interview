@@ -76,7 +76,7 @@ function normalizeNumbers_(obj) {
 }
 
 function splitTeachers_(value) {
-  return String(value || '').replace(/,/g,'·').split('·').map(x => x.trim()).filter(Boolean);
+  return String(value || '').replace(/[,\/&+]/g,'·').split('·').map(x => x.trim()).filter(Boolean);
 }
 
 function getRootFolder_() {
