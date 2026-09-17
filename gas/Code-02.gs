@@ -72,13 +72,10 @@ function getState_(payload) {
     const ownBookings = bookings.filter(b => b.student === auth.name);
     const sessionIds = new Set(sessions.map(s => s.id));
     const teams = new Set(sessions.map(s => s.team));
-    const allowedKinds = new Set(['prompt','solution','reference','recording','usedZip','unusedZip']);
-    const visibleMaterials = materials.filter(m => allowedKinds.has(m.kind) && (
+    const visibleMaterials = materials.filter(m =>
       (m.kind === 'recording' && m.student === auth.name && sessionIds.has(m.sessionId)) ||
-      (m.kind === 'reference' && sessionIds.has(m.sessionId)) ||
-      (['prompt','solution'].includes(m.kind) && teams.has(m.team)) ||
-      (['usedZip','unusedZip'].includes(m.kind) && teams.has(m.team))
-    ));
+      (['prompt','solution'].includes(m.kind) && teams.has(m.team))
+    );
     return { auth, sessions, manualBookings: ownBookings, roomUses: [], history: [], materials: visibleMaterials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
   }
   return { auth, sessions: sessionsAll, manualBookings: bookings, roomUses, history, materials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
