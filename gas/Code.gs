@@ -711,6 +711,8 @@ function writeObjects_(key, objects) {
   if (sheet.getLastRow() > 1) sheet.getRange(2,1,sheet.getLastRow()-1,headers.length).clearContent();
   if (!objects.length) return;
   const rows = objects.map(obj => headers.map(h => obj[h] == null ? '' : obj[h]));
+  const dateKeyIndex = headers.indexOf('dateKey');
+  if (dateKeyIndex >= 0) sheet.getRange(2,dateKeyIndex+1,rows.length,1).setNumberFormat('@');
   sheet.getRange(2,1,rows.length,headers.length).setValues(rows);
 }
 
@@ -733,9 +735,25 @@ function parseJsonArray_(value) {
   try { const a = JSON.parse(String(value || '[]')); return Array.isArray(a) ? a : []; } catch (e) { return []; }
 }
 
+function normalizeDateKey_(value) {
+  if (value === '' || value == null) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone() || 'Asia/Seoul', 'yyyy-MM-dd');
+  }
+  const text = String(value).trim();
+  const direct = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (direct) return direct[1] + '-' + direct[2] + '-' + direct[3];
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if (iso) return iso[1] + '-' + iso[2] + '-' + iso[3];
+  const parsed = new Date(text);
+  if (!isNaN(parsed.getTime())) return Utilities.formatDate(parsed, Session.getScriptTimeZone() || 'Asia/Seoul', 'yyyy-MM-dd');
+  return text;
+}
+
 function normalizeNumbers_(obj) {
   const out = Object.assign({}, obj);
   ['period','weekday'].forEach(k => { if (out[k] !== '' && out[k] != null) out[k] = Number(out[k]); });
+  if (Object.prototype.hasOwnProperty.call(out, 'dateKey')) out.dateKey = normalizeDateKey_(out.dateKey);
   return out;
 }
 
@@ -802,9 +820,11 @@ function dateKeyForDateText_(text) {
 
 function roomUseMatches_(use, dateKey, period, room) {
   if (use.room !== room || Number(use.period) !== Number(period)) return false;
-  if (use.dateKey) return use.dateKey === dateKey;
+  const useDateKey = normalizeDateKey_(use.dateKey);
+  const targetDateKey = normalizeDateKey_(dateKey);
+  if (useDateKey) return useDateKey === targetDateKey;
   if (!use.weekday) return false;
-  return new Date(dateKey + 'T00:00:00').getDay() === Number(use.weekday);
+  return new Date(targetDateKey + 'T00:00:00').getDay() === Number(use.weekday);
 }
 function seedRoomUses_() {
   const existing = readObjects_('roomUses');
