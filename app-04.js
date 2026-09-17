@@ -23,6 +23,7 @@ function bindDynamicEvents(){
   qs('#scheduleFileModal')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)uploadScheduleFile(f);e.target.value='';});
   qsa('[data-download-material]').forEach(b=>b.onclick=()=>b.dataset.downloadMaterial&&downloadMaterial(b.dataset.downloadMaterial,false));
   qsa('[data-play-material]').forEach(b=>b.onclick=()=>downloadMaterial(b.dataset.playMaterial,true));
+  qsa('[data-missing-recording]').forEach(b=>b.onclick=()=>{state.notice=`${b.dataset.missingRecording} 학생은 아직 저장된 녹음이 없습니다.`;render();});
   qsa('[data-delete-reference]').forEach(b=>b.onclick=()=>deleteReference(b.dataset.deleteReference));
   qsa('[data-delete-recording]').forEach(b=>b.onclick=()=>deleteRecording(b.dataset.deleteRecording));
   qsa('[data-reference-upload]').forEach(inp=>inp.onchange=e=>{const f=e.target.files?.[0];if(f)uploadReference(inp.dataset.referenceUpload,f);e.target.value='';});
@@ -33,9 +34,8 @@ function bindDynamicEvents(){
   qsa('[data-rec-start]').forEach(b=>b.onclick=()=>startRecording(b.dataset.recStart));
   qsa('[data-rec-pause]').forEach(b=>b.onclick=()=>pauseRecording(b.dataset.recPause));
   qsa('[data-rec-resume]').forEach(b=>b.onclick=()=>resumeRecording(b.dataset.recResume));
+  qsa('[data-rec-restart]').forEach(b=>b.onclick=()=>restartRecording(b.dataset.recRestart));
   qsa('[data-rec-stop]').forEach(b=>b.onclick=()=>stopRecording(b.dataset.recStop));
-  qsa('[data-rec-upload]').forEach(b=>b.onclick=()=>uploadRecording(b.dataset.recUpload));
-  qsa('[data-rec-reset]').forEach(b=>b.onclick=()=>resetRecording(b.dataset.recReset));
   qs('#uploadMaterialNow')?.addEventListener('click',uploadMaterialZip);
   qsa('[data-room-cell]').forEach(b=>b.onclick=()=>roomCellAction(b));
   qsa('[data-cancel-booking]').forEach(b=>b.onclick=()=>cancelBookingById(b.dataset.cancelBooking));
