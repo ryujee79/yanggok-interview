@@ -11,10 +11,18 @@ function login_(payload) {
     return issueToken_(role, name, false);
   }
   const user = getUser_(name);
-  if (!user) throw new Error('등록된 학생 이름을 찾지 못했습니다. 일정 엑셀을 먼저 업로드해 주세요.');
-  const mustChange = !user.passwordHash;
+  if (!user) {
+    const manual = readObjects_('bookings').some(b => String(b.student || '').trim() === name);
+    if (!manual) throw new Error('등록된 학생 이름을 찾지 못했습니다. 일정 엑셀을 먼저 업로드해 주세요.');
+  }
+  const mustChange = !user || !user.passwordHash;
   if (mustChange) {
     if (password !== INITIAL_STUDENT_PASSWORD) throw new Error('학생 이름 또는 비밀번호가 맞지 않습니다.');
+    if (!user) {
+      const users = readObjects_('users');
+      users.push({ name, passwordHash:'', updatedAt:new Date().toISOString() });
+      writeObjects_('users', users);
+    }
   } else if (user.passwordHash !== hash_(password)) {
     throw new Error('학생 이름 또는 비밀번호가 맞지 않습니다.');
   }
@@ -61,16 +69,17 @@ function getState_(payload) {
   const history = readObjects_('history').slice(-200).reverse();
   if (auth.role === 'student') {
     const sessions = sessionsAll.filter(s => s.students.includes(auth.name));
+    const ownBookings = bookings.filter(b => b.student === auth.name);
     const sessionIds = new Set(sessions.map(s => s.id));
     const teams = new Set(sessions.map(s => s.team));
     const allowedKinds = new Set(['prompt','solution','reference','recording','usedZip','unusedZip']);
     const visibleMaterials = materials.filter(m => allowedKinds.has(m.kind) && (
       (m.kind === 'recording' && m.student === auth.name && sessionIds.has(m.sessionId)) ||
-      (['reference'].includes(m.kind) && sessionIds.has(m.sessionId)) ||
+      (m.kind === 'reference' && sessionIds.has(m.sessionId)) ||
       (['prompt','solution'].includes(m.kind) && teams.has(m.team)) ||
       (['usedZip','unusedZip'].includes(m.kind) && teams.has(m.team))
     ));
-    return { auth, sessions, manualBookings: [], roomUses: [], history: [], materials: visibleMaterials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
+    return { auth, sessions, manualBookings: ownBookings, roomUses: [], history: [], materials: visibleMaterials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
   }
   return { auth, sessions: sessionsAll, manualBookings: bookings, roomUses, history, materials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
 }
