@@ -27,7 +27,7 @@ function weekDates(date){const ix=dayIndex(date),offset=ix<0?(new Date(date+'T12
 function atSlot(date,p){
  const sessions=(state.data?.sessions||[]).filter(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s));
  const manuals=mineBookings().filter(b=>b.dateKey===date&&Number(b.period)===p);
- const allNames=[...sessions.flatMap(s=>s.students||[]),...manuals.map(b=>b.student)].filter(Boolean);
+ const allNames=[...sessions.flatMap(s=>s.students||[]),...manuals.flatMap(b=>uiStudentNames(b.student))].filter(Boolean);
  return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,names:[...new Set(allNames)]};
 }
 function teacherT(name){
@@ -35,7 +35,7 @@ function teacherT(name){
 }
 function teacherStudents(teacher,studentNames){
  const list=(Array.isArray(studentNames)?studentNames:uiStudentNames(studentNames)).map(n=>String(n||'').trim()).filter(Boolean);
- return teacherT(teacher)+'('+list.join(', ')+')';
+ return teacherT(teacher)+'\n('+list.join(', ')+')';
 }
 function renderTimetable(){
  const lesson=activeLessons[state.auth.name.slice(0,2)];
@@ -43,8 +43,9 @@ function renderTimetable(){
  const head=week.map((d,i)=>'<th class="'+(i===currDay?'yg-current':'')+'">'+['월','화','수','목','금'][i]+'<br>'+d.slice(5)+'</th>').join('');
  const cells=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+week.map((d,i)=>{
   const cls=Boolean(lesson?.[i]?.includes(p)),a=atSlot(d,p);
-  const label=a.hasInterview?teacherStudents(state.auth.name,a.names):'';
-  const text=cls?(label?'수업 & '+label:'수업 '+teacherT(state.auth.name)):(label||'');
+  const interviewKind=a.hasSession?'제시문면접':a.hasManual?'일반면접':'';
+  const heading=interviewKind?(cls?'수업&':'')+interviewKind:(cls?'수업':'');
+  const text=interviewKind?heading+'\n('+a.names.join(',')+')':heading;
   const color=a.hasSession?'yg-interview':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
   return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'">'+(text?esc(text):'')+'</td>';
  }).join('')+'</tr>').join('');
@@ -57,12 +58,13 @@ function teacherBusyAt(date,p){
         mineBookings().some(b=>b.dateKey===date&&Number(b.period)===p);
 }
 function classTeacherLabel(label){
- const str=String(label||'').trim();
- const bits=str.split('·').map(x=>x.trim()).filter(Boolean);
- if(!/^수업/.test(str))return bits[0]==='동아리'?'동아리':(bits[0]||'수업');
- const teacher=bits[1]||'';
- // Legacy entries like "수업 · 연극" contain a subject, not a teacher.
- return bits[0]==='수업'&&bits.length>=3&&/^[가-힣]{2,5}T?$/.test(teacher)?'수업 '+teacherT(teacher):'수업';
+ const str=String(label||'').trim(),parts=str.split('·').map(x=>x.trim()).filter(Boolean);
+ if(/연극/.test(str) && !/^수업\s*·\s*[가-힣]{2,5}\s*·/.test(str))return '연극';
+ if(!/^수업/.test(str))return parts[0]||'';
+ // "수업 · 연극" and similar subject-only entries do not identify a teacher.
+ const name=parts[1]||'';
+ if(parts.length<3||!/^[가-힣]{2,5}T?$/.test(name))return '수업';
+ return teacherT(name)+'\n(수업)';
 }
 function renderRooms(){
  const day=ui.date,rooms=(state.data?.roomChoices||[]).filter(x=>x&&x!=='미정');
@@ -75,7 +77,7 @@ function renderRooms(){
   const busy=kind==='free'&&teacherBusyAt(day,p);
   const canAct=(kind==='free'&&!busy)||(kind==='manual'&&mine);
   const emptyDueToBusy=kind==='free'&&busy;
-  const tag=kind==='free'&&!emptyDueToBusy?'예약':'';
+  const tag=kind==='free'&&!emptyDueToBusy?'예약 가능':'';
   const detail=emptyDueToBusy?'':kind==='free'?'':kind==='classuse'?classTeacherLabel(info.label||info.text):
      kind==='manual'?teacherStudents(info.booking.teacher,info.booking.student):
      teacherStudents(info.session?.teacher,info.session?.students||[]);
@@ -173,7 +175,7 @@ function bindDashEvents(){
  const applyStudentSearch=()=>{ui.searchDraft=(qs('#ygStudentSearch')?.value||'').trim();state.studentQuery=ui.searchDraft;render();};
  qs('#ygSearchBtn')?.addEventListener('click',applyStudentSearch);
  qs('#ygStudentSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyStudentSearch();}});
- qs('#ygResetSearchBtn')?.addEventListener('click',()=>{ui.searchDraft='';state.studentQuery='';render();});
+ qs('#ygResetSearchBtn')?.addEventListener('click',()=>{ui.searchDraft='';state.studentQuery='';ui.scope='mine';ui.past=false;ui.date=kstToday();render();});
  qs('#ygNow')?.addEventListener('click',()=>{ui.past=false;render();});
  qs('#ygPast')?.addEventListener('click',()=>{ui.past=true;render();});
  qs('#ygTimetableBtn')?.addEventListener('click',()=>qs('#ygPanelTimetable')?.scrollIntoView({behavior:'smooth',block:'nearest'}));
