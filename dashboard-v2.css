@@ -96,3 +96,8 @@
 .yg-room-legend .manual::before{background:#ffefaa!important}
 
 .yg-room-btn.busy{background:#f1f5f9!important;color:#64748b!important;cursor:not-allowed!important}
+
+/* Empty rooms stay visually available to colleagues, even when this teacher is busy. */
+.yg-room-btn.free.busy-self{background:#e7f7ee!important;color:#166534!important;border:1px dashed #a7dcb8!important;opacity:1!important;cursor:not-allowed!important}
+.yg-room-btn.free.busy-self strong{color:#166534}
+.yg-room-btn.free.busy-self{font-size:10px}
