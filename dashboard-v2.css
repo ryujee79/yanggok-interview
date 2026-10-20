@@ -116,3 +116,58 @@
  border-radius:5px!important
 }
 .yg-room-legend .mine::before{background:#fff!important;border:2px solid #dc2626!important}
+
+
+/* One consistent palette across my schedule, my timetable, and room occupancy. */
+.yg-dashboard{
+ --yg-class-bg:#d5dae2;
+ --yg-class-fg:#374151;
+ --yg-prompt-bg:#dcfce7;
+ --yg-prompt-fg:#166534;
+ --yg-direct-bg:#ffedac;
+ --yg-direct-fg:#854d0e;
+}
+.yg-dashboard .yg-timetable td.yg-class,
+.yg-dashboard .yg-room-btn.classuse{
+ background:var(--yg-class-bg)!important;
+ color:var(--yg-class-fg)!important;
+}
+.yg-dashboard .yg-timetable td.yg-interview,
+.yg-dashboard .yg-room-btn.session,
+.yg-dashboard .yg-summary-list .yg-session:not(.yg-manual){
+ background:var(--yg-prompt-bg)!important;
+ color:var(--yg-prompt-fg)!important;
+}
+.yg-dashboard .yg-timetable td.yg-manual-lesson,
+.yg-dashboard .yg-room-btn.manual,
+.yg-dashboard .yg-summary-list .yg-session.yg-manual{
+ background:var(--yg-direct-bg)!important;
+ color:var(--yg-direct-fg)!important;
+}
+.yg-dashboard .yg-summary-list .yg-session:not(.yg-manual){
+ border-color:#a5d6b8!important;
+}
+.yg-dashboard .yg-summary-list .yg-session.yg-manual{
+ border-color:#e7bc58!important;
+}
+.yg-dashboard .yg-summary-list .yg-session summary{
+ background:transparent!important;
+}
+.yg-dashboard .yg-summary-list .yg-session .yg-detail{
+ background:#fff!important;
+ color:#172033;
+}
+.yg-dashboard .yg-room-legend .classuse::before{
+ background:var(--yg-class-bg)!important;
+}
+.yg-dashboard .yg-room-legend .session::before{
+ background:var(--yg-prompt-bg)!important;
+}
+.yg-dashboard .yg-room-legend .manual::before{
+ background:var(--yg-direct-bg)!important;
+}
+.yg-dashboard .yg-room-btn.is-mine{
+ box-shadow:inset 0 0 0 2.5px #dc2626!important;
+ outline:1.5px solid #dc2626!important;
+ outline-offset:-1px;
+}
