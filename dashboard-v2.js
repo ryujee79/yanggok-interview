@@ -2,7 +2,7 @@
 (function () {
 'use strict';
 const lessonsSeed={"고승":[[1,3,5,6],[3,4],[2,4,5,7],[5,6],[1,4]],"권혁":[[1,3,4,6],[2,5],[4,5,7],[2,5,6],[4]],"기윤":[[1,3,4,6],[2,4,6],[3,4,6,7],[2,5,6],[1,3,4]],"김계":[[1,2,4,5],[3,4],[1,4,6,7],[1,3,4,6],[3,4]],"김낙":[[2,5],[1,3,4,6],[4,6],[4,5],[1,4]],"김대":[[1,4,6],[4,5],[3,4,7],[3,5,6],[3,4]],"김병":[[3,4,6],[1,2,5,6],[2,3,5,6],[1,2,4],[2,4]],"김영":[[2,3,5],[4,6],[2,3,5,7],[2,3,5],[2,3]],"김점":[[3,4],[1,5],[1,3,4,7],[1,3,5,6],[2,4]],"김중":[[1,3,4,6],[2,4,5],[1,3,4,6],[1,3,4],[1,4]],"김지":[[1,2,5,6],[2,3,5,6],[1,2,3,5,6],[1,3,4,6],[1,2,4]],"김진":[[3,5,6],[1,2,4,6],[1,4,5,7],[2,3,6],[2,4]],"김희":[[2,4],[1,6],[2,5,6],[1,4,5],[2]],"노석":[[2,3],[1,4,6],[2,4,5,6],[1,2,4,5],[2,4]],"박문":[[2,3,5],[3,4,6],[2,3,5],[1,2,5],[1,2,3]],"박윤":[[1,2,4],[1,2,5,6],[2,3,5],[1,2,4,6],[1,3]],"손유":[[2,4,6],[2,3],[2,3,5,7],[2,4,6],[1,3]],"송대":[[2,4,5],[3,4],[3,4,6,7],[1,2,4,5,6],[2,4]],"신연":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"신해":[[3,5,6],[2,3,5],[1,3,4],[3,4],[3]],"안진":[[1,2,5],[1,3,4,6],[2,3,5,6],[2,4,6],[2,3]],"오중":[[1,3,4,6],[1,2,5],[1,3,5,7],[2,3,6],[2,3]],"유미":[[1,3,4,6],[2,4,5],[1,3,4,5,7],[2,3,5,6],[3,4]],"유은":[[1,2,4,5],[1,2,5,6],[1,3,6,7],[3,6],[1,2]],"유제":[[1,3,5,6],[2,3,5,6],[1,2],[3,4],[1,2]],"유종":[[1,3,5,6],[2,3,5,6],[3,5,7],[2,4,6],[2,3]],"유지":[[1,2,4],[1,2,4,5],[4,5,7],[2,3,5],[1,3,4]],"윤혜":[[1,3,4,6],[2,5],[1,3,5,7],[2,3,6],[3]],"이경":[[2,5],[1,2,4,6],[1,2,4,6],[1,4,5],[1,4]],"이기":[[3,4,6],[3,4],[1,2,4,6],[2,3,5],[3]],"이나":[[1,3,4,6],[3,4,6],[1,3,5,7],[1,2,4,6],[2,3]],"이병":[[2,4,5],[1,3,5],[3,4,6,7],[2,3,5,6],[2,4]],"이석":[[1,5,6],[1,3,4,5],[2,4,6],[1,3,4],[1,2,4]],"이수":[[1,2,3,5,6],[2,3,4,5,6],[1,2,3,5,6,7],[1,2,3,5,6],[1,3,4]],"이주":[[3,5],[1,3],[1,2,6,7],[1,2,4],[1,2]],"이진":[[3,4],[1,4,6],[2,4,5,7],[5,6],[1,3,4]],"인상":[[1,2,5],[1,3,5],[1,2,4,6],[1,3,5],[1,4]],"장덕":[[2,5,6],[1,2,5,6],[1,2,6],[1,3,4],[1,2]],"장현":[[1,2,4],[1,2,5],[1,3,5,7],[2,3,6],[3]],"정수":[[1,2,4,6],[1,2,3],[1,3,5,6],[1,3,4],[2,3]],"조현":[[2,3,5,6],[1,3,5],[1,3,4,7],[1,5],[1,3]],"천세":[[2,4,6],[1,3,4,6],[1,2,5,6],[1,4,6],[2,3]],"최성":[[1,3,4],[2,4,6],[2,4,5,7],[1,2,5,6],[1,3,4]],"홍상":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"황혜":[[1,3,5,6],[2,3,5,6],[1,2,6],[1,3,4],[1,2]]};
-const kstToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const kstToday=()=>{const f=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const p=k=>f.find(x=>x.type===k).value;return p('year')+'-'+p('month')+'-'+p('day');};
 const ui={scope:'mine',past:false,date:kstToday(),focus:'',notice:'',noticeTimeout:null};
 let activeLessons=lessonsSeed;
 try{const s=JSON.parse(localStorage.getItem('yi-class-timetable-v1')||'null');if(s&&typeof s==='object'&&Object.keys(s).length)activeLessons=s;}catch(_){}
@@ -50,11 +50,11 @@ function renderRooms(){
  if(!rooms.length)return '<div class="empty">등록된 면접실이 없습니다.</div>';
  const head=rooms.map(r=>'<th class="yg-room-name">'+esc(r)+'</th>').join('');
  const rows=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+rooms.map(r=>{
-  const info=usageInfo(day,p,r),mine=info.kind==='manual'&&info.booking.teacher===state.auth.name;
-  const canAct=info.kind==='free'||mine;
-  const tag=info.kind==='free'?'예약':info.kind==='manual'?'직접 예약':info.kind==='session'?'제시문 면접':'수업';
-  const detail=info.kind==='free'?'':info.kind==='classuse'?info.text:(info.kind==='manual'?info.booking.student:(info.session?.students||[]).join('·'));
-  return '<td><button class="yg-room-btn '+info.kind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(info.text)+'"><strong>'+tag+'</strong>'+esc(detail)+'</button></td>';
+  const info=usageInfo(day,p,r),kind=info.kind==='class'?'classuse':info.kind==='interview'?'session':info.kind,mine=kind==='manual'&&info.booking.teacher===state.auth.name;
+  const canAct=kind==='free'||mine;
+  const tag=kind==='free'?'예약':kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'수업';
+  const detail=kind==='free'?'':kind==='classuse'?(info.label||info.text||''):(kind==='manual'?info.booking.student:(info.session?.students||[]).join('·'));
+  return '<td><button class="yg-room-btn '+kind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(info.label||info.text||'')+'"><strong>'+tag+'</strong>'+esc(detail)+'</button></td>';
  }).join('')+'</tr>').join('');
  return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">직접 예약</span><span class="session">제시문</span><span class="classuse">수업</span></div>';
 }
@@ -67,7 +67,7 @@ function itemHtml(entry){
  const st=s.students||[],sub=firstLine(s.prompt);
  const safe=String(s.id).replace(/"/g,'&quot;');
  let detail=legacySessionCard(s);
- detail=detail.replace(/<label class="btn small" style="display:inline-block;margin-top:7px">참고자료 업로드<input[^>]*><\/label>/g,'');
+ detail=detail.replace(/<label class="btn small" style="display:inline-block;margin-top:7px">참고자료 업로드<input[^>]*><\/label>/g,'').replace(/<label class="material-button upload">[\s\S]*?<\/label>/g,'');
  return '<details class="yg-session" data-yg-detail="'+esc(safe)+'"><summary><div class="yg-s-title">'+esc(s.dateText)+' · '+(sessionPeriod(s)===99?'교시 미정':sessionPeriod(s)+'교시')+' · '+esc(st.join('·'))+'</div><div class="yg-s-meta">'+esc(s.teacher)+' · '+esc(sub)+' · '+esc(s.location||'미정')+'</div></summary><div class="yg-detail">'+detail+'</div></details>';
 }
 function dashboardRender(){
@@ -78,7 +78,7 @@ function dashboardRender(){
  const search='<div class="yg-search"><input id="studentSearch" list="studentNames" placeholder="학생 찾기" value="'+esc(state.studentQuery)+'"><datalist id="studentNames">'+allStudents().map(n=>'<option value="'+esc(n)+'"></option>').join('')+'</datalist><button class="btn small" id="clearStudentSearch">지우기</button></div>';
  app.innerHTML='<main class="shell yg-dashboard"><header class="topbar"><div class="brand"><small>YANGGOK 2027</small><h1>제시문 면접 지도</h1></div><div class="userbox"><span class="pill">교사 · '+esc(state.auth.name)+'</span><button class="btn" id="refreshBtn">새로고침</button><button class="btn" id="logoutBtn">로그아웃</button></div></header>'+
  '<nav class="yg-nav"><label for="ygScope" class="label" style="margin:0">일정 보기</label><select id="ygScope" style="width:auto;padding:6px 24px 6px 9px;font-size:12px"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)&연세대팀</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select>'+
- '<button id="ygNow" class="'+(!ui.past?'active':'')+'">오늘 이후 일정</button><button id="ygPast" class="'+(ui.past?'active':'')+'">면접 이력 보기</button><button id="ygTimetableBtn">내 시간표 보기</button><button id="roomBtn">실별 사용 현황</button></nav>'+
+ '<button id="ygNow" class="'+(!ui.past?'active':'')+'">오늘 이후 일정</button><button id="ygPast" class="'+(ui.past?'active':'')+'">면접 이력 보기</button><button id="ygTimetableBtn">내 시간표 보기</button><button id="ygRoomsBtn">실별 사용 현황</button></nav>'+
  '<div class="yg-tools"><button class="btn primary" id="scheduleUploadBtn">일정 업로드</button><button class="btn" id="materialUploadBtn">제시문 업로드</button><button class="btn" id="ygUploadBtn">전체 교사 시간표 업로드</button><button class="btn" id="roomManageBtn">특별실 관리</button><button class="btn" id="historyBtn">변경 이력</button><input id="scheduleFile" type="file" accept=".xlsx,.xls" class="hidden"><input id="ygTimetableFile" type="file" accept=".hwpx,.xlsx,.xls" class="hidden">'+search+'</div>'+
  (state.notice?'<div class="alert success yg-flash">'+esc(state.notice)+'</div>':'')+(state.error?'<div class="alert error">'+esc(state.error)+'</div>':'')+
  '<div class="yg-workspace">'+
@@ -111,6 +111,7 @@ function bindDashEvents(){
  qs('#ygNow')?.addEventListener('click',()=>{ui.past=false;render();});
  qs('#ygPast')?.addEventListener('click',()=>{ui.past=true;render();});
  qs('#ygTimetableBtn')?.addEventListener('click',()=>qs('#ygPanelTimetable')?.scrollIntoView({behavior:'smooth',block:'nearest'}));
+ qs('#ygRoomsBtn')?.addEventListener('click',()=>qs('#ygPanelRooms')?.scrollIntoView({behavior:'smooth',block:'nearest'}));
  qs('#ygPrev')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,-1);render();});
  qs('#ygNext')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,1);render();});
  qs('#ygDate')?.addEventListener('change',e=>{if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){ui.date=e.target.value;render();}});
@@ -151,7 +152,8 @@ async function extractHwpx(file){
 async function uploadClassTimetable(file){
  try{
   const isHwpx=/\.hwpx$/i.test(file.name);
-  const rows=isHwpx?await extractHwpx(file):XLSX.utils.sheet_to_json(XLSX.read(await file.arrayBuffer(),{type:'array'}).Sheets[XLSX.read(await file.arrayBuffer(),{type:'array'}).SheetNames[0]],{header:1,defval:''});
+  const book=isHwpx?null:XLSX.read(await file.arrayBuffer(),{type:'array'});
+  const rows=isHwpx?await extractHwpx(file):XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,defval:''});
   const parsed=lessonsFromGrid(rows);
   localStorage.setItem('yi-class-timetable-v1',JSON.stringify(parsed));activeLessons=parsed;
   state.notice='시간표를 이 기기에 적용했습니다. 전체 교사 공유 저장은 서버 기능 연결이 필요합니다.';
