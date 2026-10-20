@@ -28,7 +28,7 @@ function atSlot(date,p){
  const sessions=(state.data?.sessions||[]).filter(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s));
  const manuals=mineBookings().filter(b=>b.dateKey===date&&Number(b.period)===p);
  const allNames=[...sessions.flatMap(s=>s.students||[]),...manuals.map(b=>b.student)].filter(Boolean);
- return {hasInterview:sessions.length+manuals.length>0,hasManual:manuals.length>0,names:[...new Set(allNames)]};
+ return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,names:[...new Set(allNames)]};
 }
 function renderTimetable(){
  const lesson=activeLessons[state.auth.name.slice(0,2)];
@@ -38,12 +38,12 @@ function renderTimetable(){
   const cls=Boolean(lesson?.[i]?.includes(p)),a=atSlot(d,p);
   const label=a.hasInterview?'면접('+a.names.join('·')+')':'';
   const text=cls?(label?'수업 & '+label:'수업'):(label||'');
-  const color=cls&&label?'yg-clash':cls?'yg-class':a.hasManual?'yg-manual-lesson':label?'yg-interview':'';
+  const color=a.hasSession?'yg-interview':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
   return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'">'+(text?esc(text):'')+'</td>';
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
-  '<div class="yg-calendar-note">파랑: 수업 · 연두: 면접 · 빨강: 수업과 면접 중복 · 노랑: 직접 예약</div>';
+  '<div class="yg-calendar-note">파랑: 수업 · 초록: 제시문 면접(수업과 겹쳐도 초록) · 노랑: 직접 예약(수업과 겹쳐도 노랑)</div>';
 }
 function renderRooms(){
  const day=ui.date,rooms=(state.data?.roomChoices||[]).filter(x=>x&&x!=='미정');
@@ -95,11 +95,32 @@ function dashboardRender(){
   if(ui.notice!==state.notice){ui.notice=state.notice;if(ui.noticeTimeout)clearTimeout(ui.noticeTimeout);ui.noticeTimeout=setTimeout(()=>{if(state.notice===ui.notice){state.notice='';ui.notice='';render();}},3500);}
  }else if(!state.notice){ui.notice='';}
 }
+function uiStudentNames(value){
+ return String(value||'').replace(/\\([^)]*\\)|（[^）]*）/g,'').split(/[,，、·\\/＆&+\\n]+|\\s+(?=[가-힣]{2,4}(?:\\s|$))/).map(x=>x.trim().replace(/\\s+/g,'')).filter(Boolean);
+}
+function bookingConflictUI(date,period,room,student){
+ const name=state.auth?.name||'',studentSet=new Set(uiStudentNames(student));
+ for(const s of state.data?.sessions||[]){
+  if(dateKeyFromText(s.dateText)!==date||sessionPeriod(s)!==period)continue;
+  if((s.teachers||splitTeachers(s.teacher)).includes(name))return '같은 교시에 이미 제시문 면접이 있습니다. 직접 예약할 수 없습니다.';
+  if((s.students||[]).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 제시문 면접이 이미 있습니다.';
+  if(s.location===room)return '면접실이 같은 교시 제시문 면접으로 사용 중입니다.';
+ }
+ for(const b of state.data?.manualBookings||[]){
+  if(b.dateKey!==date||Number(b.period)!==period)continue;
+  if(b.teacher===name)return '같은 교시에 이미 직접 예약한 면접이 있습니다.';
+  if(uiStudentNames(b.student).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 다른 직접 예약이 이미 있습니다.';
+  if(b.room===room)return '같은 면접실에 다른 직접 예약이 이미 있습니다.';
+ }
+ return '';
+}
 async function bookRoom(room,p){
  const date=ui.date,info=usageInfo(date,p,room);
  if(info.kind==='free'){
   const student=prompt(fmtDate(date)+' '+p+'교시 '+room+'\n면접 학생 이름을 입력하세요.');
   if(!student?.trim())return;
+  const conflict=bookingConflictUI(date,p,room,student.trim());
+  if(conflict){state.error=conflict;render();return;}
   try{await apiCall('createManualBooking',{token:state.token,dateKey:date,period:p,room,student:student.trim()});state.notice='직접 예약했습니다.';await refreshState(true);}
   catch(e){state.error=e.message;render();}
  }else if(info.kind==='manual'&&info.booking.teacher===state.auth.name)await cancelBooking(info.booking.id);
