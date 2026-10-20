@@ -45,16 +45,21 @@ function renderTimetable(){
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
   '<div class="yg-calendar-note">파랑: 수업 · 초록: 제시문 면접(수업과 겹쳐도 초록) · 노랑: 직접 예약(수업과 겹쳐도 노랑)</div>';
 }
+function teacherBusyAt(date,p){
+ return (state.data?.sessions||[]).some(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s))||
+        mineBookings().some(b=>b.dateKey===date&&Number(b.period)===p);
+}
 function renderRooms(){
  const day=ui.date,rooms=(state.data?.roomChoices||[]).filter(x=>x&&x!=='미정');
  if(!rooms.length)return '<div class="empty">등록된 면접실이 없습니다.</div>';
  const head=rooms.map(r=>'<th class="yg-room-name">'+esc(r)+'</th>').join('');
  const rows=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+rooms.map(r=>{
   const info=usageInfo(day,p,r),kind=info.kind==='class'?'classuse':info.kind==='interview'?'session':info.kind,mine=kind==='manual'&&info.booking.teacher===state.auth.name;
-  const canAct=kind==='free'||mine;
-  const tag=kind==='free'?'예약':kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'수업';
+  const busy=kind==='free'&&teacherBusyAt(day,p);
+  const canAct=(kind==='free'&&!busy)||mine;
+  const tag=busy?'교사 일정 중복':kind==='free'?'예약':kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'수업';
   const detail=kind==='free'?'':kind==='classuse'?(info.label||info.text||''):(kind==='manual'?info.booking.student:(info.session?.students||[]).join('·'));
-  return '<td><button class="yg-room-btn '+kind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(info.label||info.text||'')+'"><strong>'+tag+'</strong>'+esc(detail)+'</button></td>';
+  return '<td><button class="yg-room-btn '+(busy?'busy':kind)+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(info.label||info.text||'')+'"><strong>'+tag+'</strong>'+esc(detail)+'</button></td>';
  }).join('')+'</tr>').join('');
  return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">직접 예약</span><span class="session">제시문</span><span class="classuse">수업</span></div>';
 }
