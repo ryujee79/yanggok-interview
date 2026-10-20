@@ -162,5 +162,26 @@ async function uploadClassTimetable(file){
   render();
  }catch(e){state.error='시간표 업로드 실패: '+e.message;render();}
 }
-render=function(){try{return dashboardRender();}catch(e){console.error('Dashboard fallback:',e);return legacyRender();}};
+function normalizeStudentView(){
+ const panel=qs('.results-panel'),list=panel?.querySelector('.card-list');
+ if(!panel||!list)return;
+ const sessions=currentSessions(),bookings=currentBookings(),nodes=[...list.querySelectorAll(':scope > article.session-card')];
+ if(nodes.length!==sessions.length+bookings.length)return;
+ const items=nodes.map((node,i)=>{
+  const session=i<sessions.length,rec=session?sessions[i]:bookings[i-sessions.length];
+  return {node,day:session?dateKeyFromText(rec.dateText):rec.dateKey,period:session?sessionPeriod(rec):Number(rec.period),index:i};
+ });
+ const shown=items.filter(x=>ui.past?x.day<kstToday():x.day>=kstToday()).sort((a,b)=>a.day.localeCompare(b.day)||a.period-b.period||a.index-b.index);
+ list.replaceChildren(...shown.map(x=>x.node));
+ const count=panel.querySelector('.panel-title span');if(count)count.textContent=shown.length+'건';
+ const nav=document.createElement('div');nav.className='yg-nav';nav.style.marginBottom='10px';
+ const future=document.createElement('button');future.textContent='오늘 이후 일정';future.className=ui.past?'':'active';
+ const past=document.createElement('button');past.textContent='면접 이력 보기';past.className=ui.past?'active':'';
+ future.onclick=()=>{ui.past=false;render();};past.onclick=()=>{ui.past=true;render();};
+ nav.append(future,past);panel.prepend(nav);
+}
+render=function(){try{
+ if(state.auth?.role==='student'&&state.data&&!state.auth.mustChange){legacyRender();return normalizeStudentView();}
+ return dashboardRender();
+}catch(e){console.error('Dashboard fallback:',e);return legacyRender();}};
 })();
