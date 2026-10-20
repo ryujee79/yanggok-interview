@@ -72,6 +72,7 @@ function itemHtml(entry){
 }
 function dashboardRender(){
  if(!state.token||!state.auth||state.auth.role!=='teacher'||!state.data||state.auth.mustChange)return legacyRender();
+ if(state.data.teacherTimetables && Object.keys(state.data.teacherTimetables).length) activeLessons=state.data.teacherTimetables;
  const expanded=new Set(qsa('details[data-yg-detail][open]').map(n=>n.dataset.ygDetail));
  const searching=document.activeElement?.id==='studentSearch',cursor=searching?document.activeElement.selectionStart:null;
  const entries=allEntries(),today=kstToday(),todayCount=(state.data?.sessions||[]).length;
@@ -80,7 +81,7 @@ function dashboardRender(){
  app.innerHTML='<main class="shell yg-dashboard"><header class="topbar"><div class="brand"><small>YANGGOK 2027</small><h1>제시문 면접 지도</h1></div><div class="userbox"><span class="pill">교사 · '+esc(state.auth.name)+'</span><button class="btn" id="refreshBtn">새로고침</button><button class="btn" id="logoutBtn">로그아웃</button></div></header>'+
  '<nav class="yg-nav"><label for="ygScope" class="label" style="margin:0">일정 보기</label><select id="ygScope" style="width:auto;padding:6px 24px 6px 9px;font-size:12px"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)&연세대팀</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select>'+
  '<button id="ygNow" class="'+(!ui.past?'active':'')+'">오늘 이후 일정</button><button id="ygPast" class="'+(ui.past?'active':'')+'">면접 이력 보기</button><button id="ygTimetableBtn">내 시간표 보기</button><button id="ygRoomsBtn">실별 사용 현황</button></nav>'+
- '<div class="yg-tools"><button class="btn primary" id="scheduleUploadBtn">일정 업로드</button><button class="btn" id="materialUploadBtn">제시문 업로드</button><button class="btn" id="ygUploadBtn">전체 교사 시간표 업로드</button><button class="btn" id="roomManageBtn">특별실 관리</button><button class="btn" id="historyBtn">변경 이력</button><input id="scheduleFile" type="file" accept=".xlsx,.xls" class="hidden"><input id="ygTimetableFile" type="file" accept=".hwpx,.xlsx,.xls" class="hidden">'+search+'</div>'+
+ '<div class="yg-tools"><button class="btn primary" id="scheduleUploadBtn">일정 업로드</button><button class="btn" id="materialUploadBtn">제시문 업로드</button>'+(state.auth.name==='유제호'?'<button class="btn" id="ygUploadBtn">전체 교사 시간표 업로드</button>':'')+'<button class="btn" id="roomManageBtn">특별실 관리</button><button class="btn" id="historyBtn">변경 이력</button><input id="scheduleFile" type="file" accept=".xlsx,.xls" class="hidden"><input id="ygTimetableFile" type="file" accept=".hwpx,.xlsx,.xls" class="hidden">'+search+'</div>'+
  (state.notice?'<div class="alert success yg-flash">'+esc(state.notice)+'</div>':'')+(state.error?'<div class="alert error">'+esc(state.error)+'</div>':'')+
  '<div class="yg-workspace">'+
  '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
@@ -153,14 +154,21 @@ async function extractHwpx(file){
 }
 async function uploadClassTimetable(file){
  try{
+  if(state.auth?.name!=='유제호')throw Error('전체 교사 시간표 업로드 권한이 없습니다.');
+  state.notice='시간표를 분석하고 있습니다.';state.error='';render();
   const isHwpx=/\.hwpx$/i.test(file.name);
   const book=isHwpx?null:XLSX.read(await file.arrayBuffer(),{type:'array'});
   const rows=isHwpx?await extractHwpx(file):XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,defval:''});
   const parsed=lessonsFromGrid(rows);
-  localStorage.setItem('yi-class-timetable-v1',JSON.stringify(parsed));activeLessons=parsed;
-  state.notice='시간표를 이 기기에 적용했습니다. 전체 교사 공유 저장은 서버 기능 연결이 필요합니다.';
+  state.notice=Object.keys(parsed).length+'명 교사 시간표를 서버에 저장하고 있습니다.';render();
+  const saved=await apiCall('uploadTeacherTimetable',{token:state.token,timetable:parsed},120000);
+  if(!saved?.saved)throw Error('서버 저장이 확인되지 않았습니다.');
+  await refreshState(false);
+  if(!state.data?.teacherTimetables||Object.keys(state.data.teacherTimetables).length!==Object.keys(parsed).length)throw Error('공유 시간표를 다시 읽는 데 실패했습니다. 새로고침해 주세요.');
+  activeLessons=state.data.teacherTimetables;
+  state.notice='전체 교사 '+saved.count+'명의 시간표가 서버에 저장되었습니다.';
   render();
- }catch(e){state.error='시간표 업로드 실패: '+e.message;render();}
+ }catch(e){state.error='시간표 업로드 실패: '+e.message;state.notice='';render();}
 }
 function normalizeStudentView(){
  const panel=qs('.results-panel'),list=panel?.querySelector('.card-list');
