@@ -208,3 +208,32 @@
  .yg-dashboard .yg-head-search label{font-size:11px}
  .yg-dashboard .yg-panel-context select{max-width:160px}
 }
+
+/* Compact multi-line labels and bookable pastel-pink rooms. */
+.yg-dashboard{
+ --yg-available-bg:#fbe4ee;
+ --yg-available-fg:#9d426f;
+}
+.yg-dashboard .yg-room-btn.free:not(.busy-self){
+ background:var(--yg-available-bg)!important;
+ color:var(--yg-available-fg)!important;
+ border:1px solid #f1c5d9!important;
+}
+.yg-dashboard .yg-room-legend span:first-child::before{
+ background:var(--yg-available-bg)!important;
+ border-color:#f1c5d9!important;
+}
+.yg-dashboard .yg-room-btn .yg-room-detail{
+ white-space:pre-line;
+ line-height:1.45;
+ font-weight:650;
+}
+.yg-dashboard .yg-timetable td{
+ white-space:pre-line;
+ line-height:1.45;
+}
+.yg-dashboard .yg-room-btn.free.busy-self{
+ background:#fff!important;
+ color:#fff!important;
+ border:0!important;
+}
