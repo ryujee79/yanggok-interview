@@ -240,3 +240,35 @@
 
 /* General interview entries in my timetable use the same bold weight as prompt interviews. */
 .yg-dashboard .yg-timetable td.yg-manual-lesson{font-weight:700!important}
+
+
+/* Direct reservation editor: responsive and keyboard-friendly. */
+.yg-dashboard ~ .yg-edit-overlay,.yg-edit-overlay{
+ position:fixed;inset:0;background:rgba(15,23,42,.48);
+ z-index:500;display:flex;align-items:center;justify-content:center;
+ padding:16px;overflow:auto
+}
+.yg-edit-dialog{width:min(100%,515px);max-height:calc(100vh - 32px);overflow:auto;
+ border-radius:14px;background:#fff;box-shadow:0 18px 50px #0003;border:1px solid #dbe4ef;padding:20px}
+.yg-edit-dialog h2{font-size:19px;margin:0 0 7px;color:#172b4d}
+.yg-edit-dialog p{margin:0 0 16px;color:#64748b;font-size:12px;line-height:1.5}
+.yg-edit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.yg-edit-fields label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:750;color:#334155}
+.yg-edit-fields label:first-child{grid-column:1/-1}
+.yg-edit-fields input,.yg-edit-fields select{
+ min-height:38px;padding:8px 9px;border-radius:7px;background:#fff;
+ border:1px solid #cad5e4;font-size:13px;color:#1e293b;width:100%;min-width:0
+}
+.yg-edit-error{margin-top:12px;border-radius:7px;padding:9px 11px;
+ background:#fff0f2;color:#a41430;font-weight:650;font-size:12px}
+.yg-edit-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:18px}
+.yg-edit-actions button{min-height:35px;padding:7px 12px}
+.yg-edit-actions .danger{margin-left:auto}
+.yg-manual-buttons{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.yg-manual-buttons button{flex:0 0 auto}
+@media(max-width:640px){.yg-edit-fields{grid-template-columns:1fr}
+ .yg-edit-fields label:first-child{grid-column:auto}
+ .yg-edit-dialog{padding:14px}
+ .yg-manual-actions{flex-wrap:wrap}
+ .yg-manual-buttons{width:100%}
+}
