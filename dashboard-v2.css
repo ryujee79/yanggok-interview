@@ -83,3 +83,6 @@
 .team-badge.manual{background:#ffedac!important;color:#854d0e!important}
 .prompt-ready{display:none!important}
 .material-button.upload{display:none!important}
+
+.yg-dashboard .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px}
+@media(max-width:760px){.yg-dashboard .topbar{flex-direction:column;align-items:flex-start}}
