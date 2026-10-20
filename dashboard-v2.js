@@ -17,8 +17,8 @@ const isMineSession=s=>(s.teachers||splitTeachers(s.teacher)).includes(state.aut
 const mineBookings=()=> (state.data?.manualBookings||[]).filter(b=>b.teacher===state.auth.name);
 function matchesScope(s){return ui.scope==='all'||ui.scope==='mine'&&isMineSession(s)||ui.scope===s.team;}
 function allEntries(){
-  const ss=(state.data?.sessions||[]).filter(matchesScope).map(data=>({type:'session',data}));
-  const bb=(state.data?.manualBookings||[]).filter(b=>ui.scope==='all'||ui.scope==='mine'&&b.teacher===state.auth.name).map(data=>({type:'manual',data}));
+  const ss=(state.data?.sessions||[]).filter(s=>state.studentQuery?.trim()?true:matchesScope(s)).map(data=>({type:'session',data}));
+  const bb=(state.data?.manualBookings||[]).filter(b=>state.studentQuery?.trim()||ui.scope==='all'||ui.scope==='mine'&&b.teacher===state.auth.name).map(data=>({type:'manual',data}));
   let out=[...ss,...bb].filter(x=>ui.past?dateKey(x)<kstToday():dateKey(x)>=kstToday());
   if(state.studentQuery){const q=state.studentQuery.trim();out=out.filter(e=>(e.type==='session'?(e.data.students||[]).join(' '):e.data.student||'').includes(q));}
   return out.sort(itemSort);
@@ -73,6 +73,7 @@ function itemHtml(entry){
 function dashboardRender(){
  if(!state.token||!state.auth||state.auth.role!=='teacher'||!state.data||state.auth.mustChange)return legacyRender();
  const expanded=new Set(qsa('details[data-yg-detail][open]').map(n=>n.dataset.ygDetail));
+ const searching=document.activeElement?.id==='studentSearch',cursor=searching?document.activeElement.selectionStart:null;
  const entries=allEntries(),today=kstToday(),todayCount=(state.data?.sessions||[]).length;
  const scopeLabel={mine:'나의 일정',all:'전체 일정',humanities:'고려대(인문)&연세대팀',natural:'고려대(자연)팀'}[ui.scope];
  const search='<div class="yg-search"><input id="studentSearch" list="studentNames" placeholder="학생 찾기" value="'+esc(state.studentQuery)+'"><datalist id="studentNames">'+allStudents().map(n=>'<option value="'+esc(n)+'"></option>').join('')+'</datalist><button class="btn small" id="clearStudentSearch">지우기</button></div>';
@@ -88,6 +89,7 @@ function dashboardRender(){
  '</div></main>'+renderModal();
  qsa('details[data-yg-detail]').forEach(n=>{if(expanded.has(n.dataset.ygDetail))n.open=true;});
  bindMainEvents();bindDashEvents();
+ if(searching){const searchInput=qs('#studentSearch');searchInput?.focus();if(cursor!==null)try{searchInput?.setSelectionRange(cursor,cursor);}catch(_){}}
  if(state.notice&&/완료|예약했습니다|취소했습니다|변경했습니다|삭제했습니다|추가했습니다|반영했습니다|업로드했습니다/.test(state.notice)){
   if(ui.notice!==state.notice){ui.notice=state.notice;if(ui.noticeTimeout)clearTimeout(ui.noticeTimeout);ui.noticeTimeout=setTimeout(()=>{if(state.notice===ui.notice){state.notice='';ui.notice='';render();}},3500);}
  }else if(!state.notice){ui.notice='';}
