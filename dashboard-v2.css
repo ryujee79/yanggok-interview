@@ -52,3 +52,28 @@
 .yg-dashboard .modal-backdrop{z-index:110}
 @media(max-width:1220px){.yg-dashboard{height:auto;min-height:100vh;overflow:visible}.yg-workspace{grid-template-columns:repeat(2,minmax(0,1fr))}.yg-workspace .yg-panel{max-height:610px}.yg-workspace .yg-panel:last-child{grid-column:1/-1}}
 @media(max-width:760px){.yg-dashboard{padding:8px}.yg-workspace{grid-template-columns:1fr}.yg-workspace .yg-panel:last-child{grid-column:auto}.yg-workspace .yg-panel{max-height:none;min-height:310px}.yg-panel-body{max-height:570px}.yg-tools .yg-search{margin-left:0;width:100%}.yg-search input{flex:1}.yg-dashboard .brand h1{font-size:17px}}
+
+/* Compatibility with the fixed-version original migration stylesheet. */
+.yg-dashboard .btn{border:1px solid #d5e0ed;border-radius:8px;background:#fff;color:#1d334d;padding:7px 10px;cursor:pointer;font-weight:750;white-space:nowrap}
+.yg-dashboard .btn.primary{background:#244f9e;color:#fff;border-color:#244f9e}
+.yg-dashboard .btn.danger{background:#fff3f3;color:#ae2534;border-color:#efbdc4}
+.yg-dashboard .btn.small{font-size:11px;padding:5px 7px}
+.yg-dashboard .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eaf0fa;color:#284777;font-size:12px;font-weight:750}
+.yg-dashboard .userbox{display:flex;align-items:center;gap:6px}
+.yg-dashboard .modal-backdrop{z-index:150}
+.yg-dashboard .prompt-ready,.yg-dashboard .material-button.upload{display:none!important}
+.yg-dashboard .yg-detail .session-card{padding:8px;border:0;border-radius:0;box-shadow:none}
+.yg-dashboard .yg-detail .session-topline{display:none}
+.yg-dashboard .yg-detail .session-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:6px 0}
+.yg-dashboard .yg-detail .session-grid>div{padding:6px}
+.yg-dashboard .yg-detail .session-grid strong{font-size:12px}
+.yg-dashboard .yg-detail .prompt-button{padding:7px 8px;min-height:auto}
+.yg-dashboard .yg-detail .prompt-button span{font-size:13px}
+.yg-dashboard .yg-detail .prompt-button small{font-size:11px}
+.yg-dashboard .yg-detail .solution-download-row{margin-top:4px}
+.yg-dashboard .yg-detail .material-bar{padding-top:5px}
+.yg-dashboard .yg-panel .empty{padding:16px;font-size:12px}
+.yg-dashboard .yg-panel-head h2{font-size:15px}
+.yg-dashboard .yg-room-btn{box-shadow:none}
+.yg-dashboard .yg-room-btn.manual{background:#ffedac!important;color:#92400e!important}
+@media(max-width:760px){.yg-dashboard .yg-detail .session-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
