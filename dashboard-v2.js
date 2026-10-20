@@ -30,20 +30,27 @@ function atSlot(date,p){
  const allNames=[...sessions.flatMap(s=>s.students||[]),...manuals.map(b=>b.student)].filter(Boolean);
  return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,names:[...new Set(allNames)]};
 }
+function teacherT(name){
+ return String(name||'').split(/[·,/&+]/).map(n=>n.trim()).filter(Boolean).map(n=>n.replace(/T$/i,'')+'T').join('·');
+}
+function teacherStudents(teacher,studentNames){
+ const list=(Array.isArray(studentNames)?studentNames:uiStudentNames(studentNames)).map(n=>String(n||'').trim()).filter(Boolean);
+ return teacherT(teacher)+'('+list.join(', ')+')';
+}
 function renderTimetable(){
  const lesson=activeLessons[state.auth.name.slice(0,2)];
  const week=weekDates(ui.date),currDay=dayIndex(ui.date);
  const head=week.map((d,i)=>'<th class="'+(i===currDay?'yg-current':'')+'">'+['월','화','수','목','금'][i]+'<br>'+d.slice(5)+'</th>').join('');
  const cells=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+week.map((d,i)=>{
   const cls=Boolean(lesson?.[i]?.includes(p)),a=atSlot(d,p);
-  const label=a.hasInterview?'면접('+a.names.join('·')+')':'';
-  const text=cls?(label?'수업 & '+label:'수업'):(label||'');
+  const label=a.hasInterview?teacherStudents(state.auth.name,a.names):'';
+  const text=cls?(label?'수업 & '+label:'수업 '+teacherT(state.auth.name)):(label||'');
   const color=a.hasSession?'yg-interview':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
   return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'">'+(text?esc(text):'')+'</td>';
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
-  '<div class="yg-calendar-note">파랑: 수업 · 초록: 제시문 면접(수업과 겹쳐도 초록) · 노랑: 직접 예약(수업과 겹쳐도 노랑)</div>';
+  '<div class="yg-calendar-note">회색: 수업 · 초록: 제시문 면접 · 노랑: 직접 예약 (수업과 면접이 겹치면 면접 종류의 색상 적용)</div>';
 }
 function teacherBusyAt(date,p){
  return (state.data?.sessions||[]).some(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s))||
@@ -52,11 +59,10 @@ function teacherBusyAt(date,p){
 function classTeacherLabel(label){
  const str=String(label||'').trim();
  const bits=str.split('·').map(x=>x.trim()).filter(Boolean);
- if(!/^수업/.test(str))return '동아리'===bits[0]?'동아리':(bits[0]||'수업');
- // Stored room uses follow "수업 · 교사명 · 과목", but single-token
- // entries such as "수업 · 연극" are not reliable teacher names.
+ if(!/^수업/.test(str))return bits[0]==='동아리'?'동아리':(bits[0]||'수업');
  const teacher=bits[1]||'';
- return /^수업$/.test(bits[0]) && bits.length>=3 && /^[가-힣]{2,5}$/.test(teacher)?'수업 · '+teacher:'수업';
+ // Legacy entries like "수업 · 연극" contain a subject, not a teacher.
+ return bits[0]==='수업'&&bits.length>=3&&/^[가-힣]{2,5}T?$/.test(teacher)?'수업 '+teacherT(teacher):'수업';
 }
 function renderRooms(){
  const day=ui.date,rooms=(state.data?.roomChoices||[]).filter(x=>x&&x!=='미정');
@@ -69,12 +75,13 @@ function renderRooms(){
   const busy=kind==='free'&&teacherBusyAt(day,p);
   const canAct=(kind==='free'&&!busy)||(kind==='manual'&&mine);
   const emptyDueToBusy=kind==='free'&&busy;
-  const tag=emptyDueToBusy?'':kind==='free'?'예약':kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'';
+  const tag=kind==='free'&&!emptyDueToBusy?'예약':'';
   const detail=emptyDueToBusy?'':kind==='free'?'':kind==='classuse'?classTeacherLabel(info.label||info.text):
-     kind==='manual'?(info.booking.teacher+' · '+info.booking.student):
-     ((info.session?.teacher||'')+' · '+(info.session?.students||[]).join('·'));
+     kind==='manual'?teacherStudents(info.booking.teacher,info.booking.student):
+     teacherStudents(info.session?.teacher,info.session?.students||[]);
   const cssKind=kind+(emptyDueToBusy?' busy-self':'')+(mine?' is-mine':'');
-  const title=emptyDueToBusy?'':[tag,detail].filter(Boolean).join(' · ');
+  const kindLabel=kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'';
+  const title=emptyDueToBusy?'':[kindLabel,tag,detail].filter(Boolean).join(' · ');
   return '<td><button class="yg-room-btn '+cssKind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(title)+'" aria-label="'+esc(emptyDueToBusy?'빈 칸':title||'예약 가능')+'">'+(tag?'<strong>'+esc(tag)+'</strong>':'')+(detail?'<span class="yg-room-detail">'+esc(detail)+'</span>':'')+'</button></td>';
  }).join('')+'</tr>').join('');
  return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">직접 예약</span><span class="session">제시문</span><span class="classuse">수업</span><span class="mine">내 면접 일정</span></div>';
