@@ -77,3 +77,9 @@
 .yg-dashboard .yg-room-btn{box-shadow:none}
 .yg-dashboard .yg-room-btn.manual{background:#ffedac!important;color:#92400e!important}
 @media(max-width:760px){.yg-dashboard .yg-detail .session-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Booking recognition and stale upload badge cleanup also apply to student screens. */
+.manual-booking-card{background:#fff5ce!important;border-color:#e9cb81!important}
+.team-badge.manual{background:#ffedac!important;color:#854d0e!important}
+.prompt-ready{display:none!important}
+.material-button.upload{display:none!important}
