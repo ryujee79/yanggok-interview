@@ -3,7 +3,7 @@
 'use strict';
 const lessonsSeed={"고승":[[1,3,5,6],[3,4],[2,4,5,7],[5,6],[1,4]],"권혁":[[1,3,4,6],[2,5],[4,5,7],[2,5,6],[4]],"기윤":[[1,3,4,6],[2,4,6],[3,4,6,7],[2,5,6],[1,3,4]],"김계":[[1,2,4,5],[3,4],[1,4,6,7],[1,3,4,6],[3,4]],"김낙":[[2,5],[1,3,4,6],[4,6],[4,5],[1,4]],"김대":[[1,4,6],[4,5],[3,4,7],[3,5,6],[3,4]],"김병":[[3,4,6],[1,2,5,6],[2,3,5,6],[1,2,4],[2,4]],"김영":[[2,3,5],[4,6],[2,3,5,7],[2,3,5],[2,3]],"김점":[[3,4],[1,5],[1,3,4,7],[1,3,5,6],[2,4]],"김중":[[1,3,4,6],[2,4,5],[1,3,4,6],[1,3,4],[1,4]],"김지":[[1,2,5,6],[2,3,5,6],[1,2,3,5,6],[1,3,4,6],[1,2,4]],"김진":[[3,5,6],[1,2,4,6],[1,4,5,7],[2,3,6],[2,4]],"김희":[[2,4],[1,6],[2,5,6],[1,4,5],[2]],"노석":[[2,3],[1,4,6],[2,4,5,6],[1,2,4,5],[2,4]],"박문":[[2,3,5],[3,4,6],[2,3,5],[1,2,5],[1,2,3]],"박윤":[[1,2,4],[1,2,5,6],[2,3,5],[1,2,4,6],[1,3]],"손유":[[2,4,6],[2,3],[2,3,5,7],[2,4,6],[1,3]],"송대":[[2,4,5],[3,4],[3,4,6,7],[1,2,4,5,6],[2,4]],"신연":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"신해":[[3,5,6],[2,3,5],[1,3,4],[3,4],[3]],"안진":[[1,2,5],[1,3,4,6],[2,3,5,6],[2,4,6],[2,3]],"오중":[[1,3,4,6],[1,2,5],[1,3,5,7],[2,3,6],[2,3]],"유미":[[1,3,4,6],[2,4,5],[1,3,4,5,7],[2,3,5,6],[3,4]],"유은":[[1,2,4,5],[1,2,5,6],[1,3,6,7],[3,6],[1,2]],"유제":[[1,3,5,6],[2,3,5,6],[1,2],[3,4],[1,2]],"유종":[[1,3,5,6],[2,3,5,6],[3,5,7],[2,4,6],[2,3]],"유지":[[1,2,4],[1,2,4,5],[4,5,7],[2,3,5],[1,3,4]],"윤혜":[[1,3,4,6],[2,5],[1,3,5,7],[2,3,6],[3]],"이경":[[2,5],[1,2,4,6],[1,2,4,6],[1,4,5],[1,4]],"이기":[[3,4,6],[3,4],[1,2,4,6],[2,3,5],[3]],"이나":[[1,3,4,6],[3,4,6],[1,3,5,7],[1,2,4,6],[2,3]],"이병":[[2,4,5],[1,3,5],[3,4,6,7],[2,3,5,6],[2,4]],"이석":[[1,5,6],[1,3,4,5],[2,4,6],[1,3,4],[1,2,4]],"이수":[[1,2,3,5,6],[2,3,4,5,6],[1,2,3,5,6,7],[1,2,3,5,6],[1,3,4]],"이주":[[3,5],[1,3],[1,2,6,7],[1,2,4],[1,2]],"이진":[[3,4],[1,4,6],[2,4,5,7],[5,6],[1,3,4]],"인상":[[1,2,5],[1,3,5],[1,2,4,6],[1,3,5],[1,4]],"장덕":[[2,5,6],[1,2,5,6],[1,2,6],[1,3,4],[1,2]],"장현":[[1,2,4],[1,2,5],[1,3,5,7],[2,3,6],[3]],"정수":[[1,2,4,6],[1,2,3],[1,3,5,6],[1,3,4],[2,3]],"조현":[[2,3,5,6],[1,3,5],[1,3,4,7],[1,5],[1,3]],"천세":[[2,4,6],[1,3,4,6],[1,2,5,6],[1,4,6],[2,3]],"최성":[[1,3,4],[2,4,6],[2,4,5,7],[1,2,5,6],[1,3,4]],"홍상":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"황혜":[[1,3,5,6],[2,3,5,6],[1,2,6],[1,3,4],[1,2]]};
 const kstToday=()=>{const f=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const p=k=>f.find(x=>x.type===k).value;return p('year')+'-'+p('month')+'-'+p('day');};
-const ui={scope:'mine',past:false,date:kstToday(),focus:'',notice:'',noticeTimeout:null};
+const ui={scope:'mine',past:false,date:kstToday(),focus:'',searchDraft:'',notice:'',noticeTimeout:null};
 let activeLessons=lessonsSeed;
 try{const s=JSON.parse(localStorage.getItem('yi-class-timetable-v1')||'null');if(s&&typeof s==='object'&&Object.keys(s).length)activeLessons=s;}catch(_){}
 const legacyRender=render,legacySessionCard=sessionCard;
@@ -102,23 +102,32 @@ function dashboardRender(){
  if(!state.token||!state.auth||state.auth.role!=='teacher'||!state.data||state.auth.mustChange)return legacyRender();
  if(state.data.teacherTimetables && Object.keys(state.data.teacherTimetables).length) activeLessons=state.data.teacherTimetables;
  const expanded=new Set(qsa('details[data-yg-detail][open]').map(n=>n.dataset.ygDetail));
- const searching=document.activeElement?.id==='studentSearch',cursor=searching?document.activeElement.selectionStart:null;
+
  const entries=allEntries(),today=kstToday(),todayCount=(state.data?.sessions||[]).length;
  const scopeLabel={mine:'나의 일정',all:'전체 일정',humanities:'고려대(인문)&연세대팀',natural:'고려대(자연)팀'}[ui.scope];
- const search='<div class="yg-search"><input id="studentSearch" list="studentNames" placeholder="학생 찾기" value="'+esc(state.studentQuery)+'"><datalist id="studentNames">'+allStudents().map(n=>'<option value="'+esc(n)+'"></option>').join('')+'</datalist><button class="btn small" id="clearStudentSearch">지우기</button></div>';
+ const search='<div class="yg-head-search"><label for="ygStudentSearch">학생 찾기</label><input id="ygStudentSearch" list="studentNames" value="'+esc(ui.searchDraft)+'" placeholder="학생 이름 입력" autocomplete="off"><datalist id="studentNames">'+allStudents().map(n=>'<option value="'+esc(n)+'"></option>').join('')+'</datalist><button type="button" class="btn" id="ygSearchBtn">조회</button><button type="button" class="btn" id="ygResetSearchBtn">초기화</button></div>';
  app.innerHTML='<main class="shell yg-dashboard"><header class="topbar"><div class="brand"><small>YANGGOK 2027</small><h1>제시문 면접 지도</h1></div><div class="userbox"><span class="pill">교사 · '+esc(state.auth.name)+'</span><button class="btn" id="refreshBtn">새로고침</button><button class="btn" id="logoutBtn">로그아웃</button></div></header>'+
- '<nav class="yg-nav"><label for="ygScope" class="label" style="margin:0">일정 보기</label><select id="ygScope" style="width:auto;padding:6px 24px 6px 9px;font-size:12px"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)&연세대팀</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select>'+
- '<button id="ygNow" class="'+(!ui.past?'active':'')+'">오늘 이후 일정</button><button id="ygPast" class="'+(ui.past?'active':'')+'">면접 이력 보기</button><button id="ygTimetableBtn">내 시간표 보기</button><button id="ygRoomsBtn">실별 사용 현황</button></nav>'+
- '<div class="yg-tools"><button class="btn primary" id="scheduleUploadBtn">일정 업로드</button><button class="btn" id="materialUploadBtn">제시문 업로드</button>'+(state.auth.name==='유제호'?'<button class="btn" id="ygUploadBtn">전체 교사 시간표 업로드</button>':'')+'<button class="btn" id="roomManageBtn">특별실 관리</button><button class="btn" id="historyBtn">변경 이력</button><input id="scheduleFile" type="file" accept=".xlsx,.xls" class="hidden"><input id="ygTimetableFile" type="file" accept=".hwpx,.xlsx,.xls" class="hidden">'+search+'</div>'+
+ '<nav class="yg-head-menu" aria-label="면접 일정 관리 메뉴">'+
+ '<button type="button" id="ygNow" class="yg-menu-switch '+(!ui.past?'active':'')+'">오늘 이후 일정</button>'+
+ '<button type="button" id="ygPast" class="yg-menu-switch '+(ui.past?'active':'')+'">면접 이력 보기</button>'+
+ '<button type="button" class="btn primary" id="scheduleUploadBtn">일정 업로드</button>'+
+ '<button type="button" class="btn" id="materialUploadBtn">제시문 업로드</button>'+
+ (state.auth.name==='유제호'?'<button type="button" class="btn" id="ygUploadBtn">전체 교사 시간표 업로드</button>':'')+
+ '<button type="button" class="btn" id="roomManageBtn">특별실 관리</button>'+
+ '<button type="button" class="btn" id="historyBtn">변경 이력</button>'+
+ search+
+ '<input id="scheduleFile" type="file" accept=".xlsx,.xls" class="hidden">'+
+ '<input id="ygTimetableFile" type="file" accept=".hwpx,.xlsx,.xls" class="hidden">'+
+ '</nav>'+
  (state.notice?'<div class="alert success yg-flash">'+esc(state.notice)+'</div>':'')+(state.error?'<div class="alert error">'+esc(state.error)+'</div>':'')+
  '<div class="yg-workspace">'+
- '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
+ '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><div class="yg-panel-context"><select id="ygScope" aria-label="일정 범위 선택"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)&연세대팀</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
  '<section class="yg-panel" id="ygPanelTimetable"><div class="yg-panel-head"><h2>내 시간표 보기</h2><span class="count">'+esc(state.auth.name)+'</span></div><div class="yg-panel-body">'+renderTimetable()+'</div></section>'+
  '<section class="yg-panel" id="ygPanelRooms"><div class="yg-panel-head"><h2>실별 사용 현황</h2><div class="yg-date-tools"><button class="btn" id="ygPrev" aria-label="전날">‹</button><input id="ygDate" type="date" value="'+esc(ui.date)+'"><button class="btn" id="ygNext" aria-label="다음날">›</button></div></div><div class="yg-panel-body">'+renderRooms()+'</div></section>'+
  '</div></main>'+renderModal();
  qsa('details[data-yg-detail]').forEach(n=>{if(expanded.has(n.dataset.ygDetail))n.open=true;});
  bindMainEvents();bindDashEvents();
- if(searching){const searchInput=qs('#studentSearch');searchInput?.focus();if(cursor!==null)try{searchInput?.setSelectionRange(cursor,cursor);}catch(_){}}
+
  if(state.notice&&/완료|예약했습니다|취소했습니다|변경했습니다|삭제했습니다|추가했습니다|반영했습니다|업로드했습니다/.test(state.notice)){
   if(ui.notice!==state.notice){ui.notice=state.notice;if(ui.noticeTimeout)clearTimeout(ui.noticeTimeout);ui.noticeTimeout=setTimeout(()=>{if(state.notice===ui.notice){state.notice='';ui.notice='';render();}},3500);}
  }else if(!state.notice){ui.notice='';}
@@ -160,6 +169,11 @@ async function cancelBooking(id){
 }
 function bindDashEvents(){
  qs('#ygScope')?.addEventListener('change',e=>{ui.scope=e.target.value;render();});
+ qs('#ygStudentSearch')?.addEventListener('input',e=>{ui.searchDraft=e.target.value;});
+ const applyStudentSearch=()=>{ui.searchDraft=(qs('#ygStudentSearch')?.value||'').trim();state.studentQuery=ui.searchDraft;render();};
+ qs('#ygSearchBtn')?.addEventListener('click',applyStudentSearch);
+ qs('#ygStudentSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyStudentSearch();}});
+ qs('#ygResetSearchBtn')?.addEventListener('click',()=>{ui.searchDraft='';state.studentQuery='';render();});
  qs('#ygNow')?.addEventListener('click',()=>{ui.past=false;render();});
  qs('#ygPast')?.addEventListener('click',()=>{ui.past=true;render();});
  qs('#ygTimetableBtn')?.addEventListener('click',()=>qs('#ygPanelTimetable')?.scrollIntoView({behavior:'smooth',block:'nearest'}));
