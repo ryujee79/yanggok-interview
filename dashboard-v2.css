@@ -86,3 +86,11 @@
 
 .yg-dashboard .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px}
 @media(max-width:760px){.yg-dashboard .topbar{flex-direction:column;align-items:flex-start}}
+
+/* Appointment type controls the color even if a class overlaps the interview. */
+.yg-timetable td.yg-interview{background:#dcfce7!important;color:#166534!important}
+.yg-timetable td.yg-manual-lesson{background:#ffefaa!important;color:#92400e!important}
+.yg-room-btn.session{background:#dcfce7!important;color:#166534!important}
+.yg-room-legend .session::before{background:#dcfce7!important}
+.yg-room-btn.manual{background:#ffefaa!important;color:#92400e!important}
+.yg-room-legend .manual::before{background:#ffefaa!important}
