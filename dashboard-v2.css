@@ -237,3 +237,6 @@
  color:#fff!important;
  border:0!important;
 }
+
+/* General interview entries in my timetable use the same bold weight as prompt interviews. */
+.yg-dashboard .yg-timetable td.yg-manual-lesson{font-weight:700!important}
