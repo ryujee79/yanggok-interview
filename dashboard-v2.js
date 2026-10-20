@@ -96,7 +96,7 @@ function dashboardRender(){
  }else if(!state.notice){ui.notice='';}
 }
 function uiStudentNames(value){
- return String(value||'').replace(/\\([^)]*\\)|（[^）]*）/g,'').split(/[,，、·\\/＆&+\\n]+|\\s+(?=[가-힣]{2,4}(?:\\s|$))/).map(x=>x.trim().replace(/\\s+/g,'')).filter(Boolean);
+ return String(value||'').replace(/\([^)]*\)|（[^）]*）/g,'').split(/[,，、·\/＆&+\n]+|\s+(?=[가-힣]{2,4}(?:\s|$))/).map(x=>x.trim().replace(/\s+/g,'')).filter(Boolean);
 }
 function bookingConflictUI(date,period,room,student){
  const name=state.auth?.name||'',studentSet=new Set(uiStudentNames(student));
