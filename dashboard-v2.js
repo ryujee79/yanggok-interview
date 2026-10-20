@@ -28,7 +28,8 @@ function atSlot(date,p){
  const sessions=(state.data?.sessions||[]).filter(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s));
  const manuals=mineBookings().filter(b=>b.dateKey===date&&Number(b.period)===p);
  const allNames=[...sessions.flatMap(s=>s.students||[]),...manuals.flatMap(b=>uiStudentNames(b.student))].filter(Boolean);
- return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,names:[...new Set(allNames)]};
+ const allRooms=[...sessions.map(s=>s.location),...manuals.map(b=>b.room)].map(r=>String(r||'').trim()).filter(Boolean);
+ return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,names:[...new Set(allNames)],rooms:[...new Set(allRooms)]};
 }
 function teacherT(name){
  return String(name||'').split(/[·,/&+]/).map(n=>n.trim()).filter(Boolean).map(n=>n.replace(/T$/i,'')+'T').join('·');
@@ -45,7 +46,7 @@ function renderTimetable(){
   const cls=Boolean(lesson?.[i]?.includes(p)),a=atSlot(d,p);
   const interviewKind=a.hasSession?'제시문면접':a.hasManual?'일반면접':'';
   const heading=interviewKind?(cls?'수업&':'')+interviewKind:(cls?'수업':'');
-  const text=interviewKind?heading+'\n('+a.names.join(',')+')':heading;
+  const text=interviewKind?heading+'\n('+a.names.join(',')+')'+(a.rooms.length?'\n'+a.rooms.join(','):''):heading;
   const color=a.hasSession?'yg-interview':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
   return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'">'+(text?esc(text):'')+'</td>';
  }).join('')+'</tr>').join('');
