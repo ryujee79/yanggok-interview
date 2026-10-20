@@ -3,7 +3,7 @@
 'use strict';
 const lessonsSeed={"고승":[[1,3,5,6],[3,4],[2,4,5,7],[5,6],[1,4]],"권혁":[[1,3,4,6],[2,5],[4,5,7],[2,5,6],[4]],"기윤":[[1,3,4,6],[2,4,6],[3,4,6,7],[2,5,6],[1,3,4]],"김계":[[1,2,4,5],[3,4],[1,4,6,7],[1,3,4,6],[3,4]],"김낙":[[2,5],[1,3,4,6],[4,6],[4,5],[1,4]],"김대":[[1,4,6],[4,5],[3,4,7],[3,5,6],[3,4]],"김병":[[3,4,6],[1,2,5,6],[2,3,5,6],[1,2,4],[2,4]],"김영":[[2,3,5],[4,6],[2,3,5,7],[2,3,5],[2,3]],"김점":[[3,4],[1,5],[1,3,4,7],[1,3,5,6],[2,4]],"김중":[[1,3,4,6],[2,4,5],[1,3,4,6],[1,3,4],[1,4]],"김지":[[1,2,5,6],[2,3,5,6],[1,2,3,5,6],[1,3,4,6],[1,2,4]],"김진":[[3,5,6],[1,2,4,6],[1,4,5,7],[2,3,6],[2,4]],"김희":[[2,4],[1,6],[2,5,6],[1,4,5],[2]],"노석":[[2,3],[1,4,6],[2,4,5,6],[1,2,4,5],[2,4]],"박문":[[2,3,5],[3,4,6],[2,3,5],[1,2,5],[1,2,3]],"박윤":[[1,2,4],[1,2,5,6],[2,3,5],[1,2,4,6],[1,3]],"손유":[[2,4,6],[2,3],[2,3,5,7],[2,4,6],[1,3]],"송대":[[2,4,5],[3,4],[3,4,6,7],[1,2,4,5,6],[2,4]],"신연":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"신해":[[3,5,6],[2,3,5],[1,3,4],[3,4],[3]],"안진":[[1,2,5],[1,3,4,6],[2,3,5,6],[2,4,6],[2,3]],"오중":[[1,3,4,6],[1,2,5],[1,3,5,7],[2,3,6],[2,3]],"유미":[[1,3,4,6],[2,4,5],[1,3,4,5,7],[2,3,5,6],[3,4]],"유은":[[1,2,4,5],[1,2,5,6],[1,3,6,7],[3,6],[1,2]],"유제":[[1,3,5,6],[2,3,5,6],[1,2],[3,4],[1,2]],"유종":[[1,3,5,6],[2,3,5,6],[3,5,7],[2,4,6],[2,3]],"유지":[[1,2,4],[1,2,4,5],[4,5,7],[2,3,5],[1,3,4]],"윤혜":[[1,3,4,6],[2,5],[1,3,5,7],[2,3,6],[3]],"이경":[[2,5],[1,2,4,6],[1,2,4,6],[1,4,5],[1,4]],"이기":[[3,4,6],[3,4],[1,2,4,6],[2,3,5],[3]],"이나":[[1,3,4,6],[3,4,6],[1,3,5,7],[1,2,4,6],[2,3]],"이병":[[2,4,5],[1,3,5],[3,4,6,7],[2,3,5,6],[2,4]],"이석":[[1,5,6],[1,3,4,5],[2,4,6],[1,3,4],[1,2,4]],"이수":[[1,2,3,5,6],[2,3,4,5,6],[1,2,3,5,6,7],[1,2,3,5,6],[1,3,4]],"이주":[[3,5],[1,3],[1,2,6,7],[1,2,4],[1,2]],"이진":[[3,4],[1,4,6],[2,4,5,7],[5,6],[1,3,4]],"인상":[[1,2,5],[1,3,5],[1,2,4,6],[1,3,5],[1,4]],"장덕":[[2,5,6],[1,2,5,6],[1,2,6],[1,3,4],[1,2]],"장현":[[1,2,4],[1,2,5],[1,3,5,7],[2,3,6],[3]],"정수":[[1,2,4,6],[1,2,3],[1,3,5,6],[1,3,4],[2,3]],"조현":[[2,3,5,6],[1,3,5],[1,3,4,7],[1,5],[1,3]],"천세":[[2,4,6],[1,3,4,6],[1,2,5,6],[1,4,6],[2,3]],"최성":[[1,3,4],[2,4,6],[2,4,5,7],[1,2,5,6],[1,3,4]],"홍상":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"황혜":[[1,3,5,6],[2,3,5,6],[1,2,6],[1,3,4],[1,2]]};
 const kstToday=()=>{const f=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const p=k=>f.find(x=>x.type===k).value;return p('year')+'-'+p('month')+'-'+p('day');};
-const ui={scope:'mine',past:false,date:kstToday(),focus:'',searchDraft:'',notice:'',noticeTimeout:null};
+const ui={scope:'mine',past:false,date:kstToday(),focus:'',searchDraft:'',editBookingId:'',editDraft:null,editError:'',editSaving:false,notice:'',noticeTimeout:null};
 let activeLessons=lessonsSeed;
 try{const s=JSON.parse(localStorage.getItem('yi-class-timetable-v1')||'null');if(s&&typeof s==='object'&&Object.keys(s).length)activeLessons=s;}catch(_){}
 const legacyRender=render,legacySessionCard=sessionCard;
@@ -92,7 +92,7 @@ function itemHtml(entry){
  const s=entry.data;
  if(entry.type==='manual'){
   return '<div class="yg-session yg-manual"><div class="yg-manual-actions"><div><div class="yg-s-title">'+esc(fmtDate(s.dateKey))+' · '+esc(s.period)+'교시 · 직접 예약</div><div class="yg-s-meta">'+esc(s.student||'')+' · '+esc(s.room||'')+' · '+esc(s.teacher||'')+'</div></div>'+
-  (s.teacher===state.auth.name?'<button class="btn small danger" data-yg-cancel="'+esc(s.id)+'">예약 취소</button>':'')+'</div></div>';
+  (s.teacher===state.auth.name?'<div class="yg-manual-buttons"><button type="button" class="btn small" data-yg-edit="'+esc(s.id)+'">예약 수정</button><button type="button" class="btn small danger" data-yg-cancel="'+esc(s.id)+'">예약 취소</button></div>':'')+'</div></div>';
  }
  const st=s.students||[],sub=firstLine(s.prompt);
  const safe=String(s.id).replace(/"/g,'&quot;');
@@ -126,7 +126,7 @@ function dashboardRender(){
  '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><div class="yg-panel-context"><select id="ygScope" aria-label="일정 범위 선택"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)&연세대팀</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
  '<section class="yg-panel" id="ygPanelTimetable"><div class="yg-panel-head"><h2>내 시간표 보기</h2><span class="count">'+esc(state.auth.name)+'</span></div><div class="yg-panel-body">'+renderTimetable()+'</div></section>'+
  '<section class="yg-panel" id="ygPanelRooms"><div class="yg-panel-head"><h2>실별 사용 현황</h2><div class="yg-date-tools"><button class="btn" id="ygPrev" aria-label="전날">‹</button><input id="ygDate" type="date" value="'+esc(ui.date)+'"><button class="btn" id="ygNext" aria-label="다음날">›</button></div></div><div class="yg-panel-body">'+renderRooms()+'</div></section>'+
- '</div></main>'+renderModal();
+ '</div></main>'+renderModal()+renderEditBookingModal();
  qsa('details[data-yg-detail]').forEach(n=>{if(expanded.has(n.dataset.ygDetail))n.open=true;});
  bindMainEvents();bindDashEvents();
 
@@ -134,11 +134,84 @@ function dashboardRender(){
   if(ui.notice!==state.notice){ui.notice=state.notice;if(ui.noticeTimeout)clearTimeout(ui.noticeTimeout);ui.noticeTimeout=setTimeout(()=>{if(state.notice===ui.notice){state.notice='';ui.notice='';render();}},3500);}
  }else if(!state.notice){ui.notice='';}
 }
+
+function openBookingEditor(id){
+ const b=(state.data?.manualBookings||[]).find(x=>x.id===id&&x.teacher===state.auth?.name);
+ if(!b){state.error='본인이 등록한 예약만 수정할 수 있습니다.';render();return;}
+ ui.editBookingId=id;
+ ui.editDraft={dateKey:b.dateKey,period:Number(b.period),room:b.room,student:b.student};
+ ui.editError='';ui.editSaving=false;state.error='';
+ render();
+ qs('#ygEditStudent')?.focus();
+}
+function closeBookingEditor(){
+ if(ui.editSaving)return;
+ ui.editBookingId='';ui.editDraft=null;ui.editError='';
+ render();
+}
+function renderEditBookingModal(){
+ const b=(state.data?.manualBookings||[]).find(x=>x.id===ui.editBookingId&&x.teacher===state.auth?.name);
+ if(!b)return '';
+ const draft=ui.editDraft||b;
+ const rooms=(state.data?.roomChoices||[]).filter(r=>r&&r!=='미정');
+ const periods=Array.from({length:8},(_,i)=>i+1);
+ const choices=(values,selected)=>values.map(v=>'<option value="'+esc(v)+'"'+(String(v)===String(selected)?' selected':'')+'>'+esc(v)+'</option>').join('');
+ return '<div id="ygEditOverlay" class="yg-edit-overlay">'+
+ '<section class="yg-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="ygEditTitle">'+
+ '<form id="ygEditBookingForm"><h2 id="ygEditTitle">직접 예약 수정</h2>'+
+ '<p>기존 예약을 유지하면서 학생·날짜·교시·면접실을 변경합니다. 중복 일정은 저장되지 않습니다.</p>'+
+ '<div class="yg-edit-fields">'+
+ '<label>면접 학생<input id="ygEditStudent" name="student" type="text" required maxlength="300" value="'+esc(draft.student||'')+'" placeholder="학생 이름을 쉼표로 구분"></label>'+
+ '<label>날짜<input id="ygEditDate" name="dateKey" type="date" required value="'+esc(draft.dateKey||'')+'"></label>'+
+ '<label>교시<select id="ygEditPeriod" name="period">'+choices(periods,draft.period)+'</select></label>'+
+ '<label>면접실<select id="ygEditRoom" name="room">'+choices(rooms,draft.room)+'</select></label>'+
+ '</div>'+
+ (ui.editError?'<div role="alert" class="yg-edit-error">'+esc(ui.editError)+'</div>':'')+
+ '<div class="yg-edit-actions">'+
+ '<button type="submit" class="btn primary"'+(ui.editSaving?' disabled':'')+'>'+(ui.editSaving?'수정 중…':'수정 저장')+'</button>'+
+ '<button type="button" id="ygEditClose" class="btn"'+(ui.editSaving?' disabled':'')+'>닫기</button>'+
+ '<button type="button" id="ygEditDelete" class="btn danger"'+(ui.editSaving?' disabled':'')+'>예약 취소</button>'+
+ '</div></form></section></div>';
+}
+async function saveBookingEdit(){
+ if(ui.editSaving)return;
+ const orig=(state.data?.manualBookings||[]).find(x=>x.id===ui.editBookingId&&x.teacher===state.auth?.name);
+ if(!orig){ui.editError='수정할 예약을 찾지 못했습니다. 새로고침해 주세요.';render();return;}
+ const payload={
+  id:orig.id,dateKey:qs('#ygEditDate')?.value||'',
+  period:Number(qs('#ygEditPeriod')?.value),
+  room:qs('#ygEditRoom')?.value||'',
+  student:(qs('#ygEditStudent')?.value||'').trim()
+ };
+ ui.editDraft=payload;
+ if(!payload.student){ui.editError='면접 학생을 입력해 주세요.';render();return;}
+ if(!payload.dateKey||!Number.isInteger(payload.period)||!payload.room){ui.editError='날짜, 교시, 면접실을 확인해 주세요.';render();return;}
+ const conflict=bookingConflictUI(payload.dateKey,payload.period,payload.room,payload.student,orig.id);
+ if(conflict){ui.editError=conflict+' 기존 예약은 유지됩니다.';render();return;}
+ ui.editSaving=true;ui.editError='';
+ const saveBtn=qs('#ygEditBookingForm button[type="submit"]');
+ if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='수정 중…';}
+ try{
+  await apiCall('updateManualBooking',{token:state.token,...payload});
+  ui.editBookingId='';ui.editDraft=null;ui.editError='';ui.editSaving=false;
+  state.notice='직접 예약을 수정했습니다.';
+  await refreshState(true);
+ }catch(e){
+  ui.editSaving=false;
+  ui.editError=/알 수 없는 요청.*updateManualBooking/.test(String(e.message||''))?
+   '서버에 예약 수정 기능이 아직 반영되지 않았습니다. Apps Script 최신 코드로 기존 배포를 업데이트해 주세요.' :
+   String(e.message||'예약 수정에 실패했습니다.');
+  render();
+ }
+}
 function uiStudentNames(value){
  return String(value||'').replace(/\([^)]*\)|（[^）]*）/g,'').split(/[,，、·\/＆&+\n]+|\s+(?=[가-힣]{2,4}(?:\s|$))/).map(x=>x.trim().replace(/\s+/g,'')).filter(Boolean);
 }
-function bookingConflictUI(date,period,room,student){
+function bookingConflictUI(date,period,room,student,excludeBookingId){
  const name=state.auth?.name||'',studentSet=new Set(uiStudentNames(student));
+ for(const use of state.data?.roomUses||[]){
+  if(roomUseMatches(use,date,period,room))return '해당 면접실은 수업 또는 행사로 사용 중입니다.';
+ }
  for(const s of state.data?.sessions||[]){
   if(dateKeyFromText(s.dateText)!==date||sessionPeriod(s)!==period)continue;
   if((s.teachers||splitTeachers(s.teacher)).includes(name))return '같은 교시에 이미 제시문 면접이 있습니다. 직접 예약할 수 없습니다.';
@@ -146,7 +219,7 @@ function bookingConflictUI(date,period,room,student){
   if(s.location===room)return '면접실이 같은 교시 제시문 면접으로 사용 중입니다.';
  }
  for(const b of state.data?.manualBookings||[]){
-  if(b.dateKey!==date||Number(b.period)!==period)continue;
+  if(b.id===excludeBookingId||b.dateKey!==date||Number(b.period)!==period)continue;
   if(b.teacher===name)return '같은 교시에 이미 직접 예약한 면접이 있습니다.';
   if(uiStudentNames(b.student).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 다른 직접 예약이 이미 있습니다.';
   if(b.room===room)return '같은 면접실에 다른 직접 예약이 이미 있습니다.';
@@ -162,11 +235,11 @@ async function bookRoom(room,p){
   if(conflict){state.error=conflict;render();return;}
   try{await apiCall('createManualBooking',{token:state.token,dateKey:date,period:p,room,student:student.trim()});state.notice='직접 예약했습니다.';await refreshState(true);}
   catch(e){state.error=e.message;render();}
- }else if(info.kind==='manual'&&info.booking.teacher===state.auth.name)await cancelBooking(info.booking.id);
+ }else if(info.kind==='manual'&&info.booking.teacher===state.auth.name)openBookingEditor(info.booking.id);
 }
 async function cancelBooking(id){
  if(!confirm('이 직접 예약을 취소하시겠습니까?'))return;
- try{await apiCall('cancelManualBooking',{token:state.token,id});state.notice='직접 예약을 취소했습니다.';await refreshState(true);}
+ try{await apiCall('cancelManualBooking',{token:state.token,id});if(ui.editBookingId===id){ui.editBookingId='';ui.editDraft=null;ui.editError='';}state.notice='직접 예약을 취소했습니다.';await refreshState(true);}
  catch(e){state.error=e.message;render();}
 }
 function bindDashEvents(){
@@ -185,6 +258,11 @@ function bindDashEvents(){
  qs('#ygDate')?.addEventListener('change',e=>{if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){ui.date=e.target.value;render();}});
  qsa('[data-yg-book]').forEach(btn=>btn.addEventListener('click',()=>{const [room,p]=btn.dataset.ygBook.split('|');bookRoom(decodeURIComponent(room),Number(p));}));
  qsa('[data-yg-cancel]').forEach(btn=>btn.addEventListener('click',()=>cancelBooking(btn.dataset.ygCancel)));
+ qsa('[data-yg-edit]').forEach(btn=>btn.addEventListener('click',()=>openBookingEditor(btn.dataset.ygEdit)));
+ qs('#ygEditBookingForm')?.addEventListener('submit',e=>{e.preventDefault();saveBookingEdit();});
+ qs('#ygEditClose')?.addEventListener('click',closeBookingEditor);
+ qs('#ygEditDelete')?.addEventListener('click',()=>{if(ui.editBookingId)cancelBooking(ui.editBookingId);});
+ qs('#ygEditOverlay')?.addEventListener('click',e=>{if(e.target.id==='ygEditOverlay')closeBookingEditor();});
  qs('#ygUploadBtn')?.addEventListener('click',()=>qs('#ygTimetableFile')?.click());
  qs('#ygTimetableFile')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(f)await uploadClassTimetable(f);e.target.value='';});
 }
