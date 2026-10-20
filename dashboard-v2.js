@@ -35,7 +35,7 @@ function teacherT(name){
 }
 function teacherStudents(teacher,studentNames){
  const list=(Array.isArray(studentNames)?studentNames:uiStudentNames(studentNames)).map(n=>String(n||'').trim()).filter(Boolean);
- return teacherT(teacher)+'\n('+list.join(', ')+')';
+ return teacherT(teacher)+'\n('+list.join(',')+')';
 }
 function renderTimetable(){
  const lesson=activeLessons[state.auth.name.slice(0,2)];
