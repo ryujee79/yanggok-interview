@@ -49,21 +49,35 @@ function teacherBusyAt(date,p){
  return (state.data?.sessions||[]).some(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s))||
         mineBookings().some(b=>b.dateKey===date&&Number(b.period)===p);
 }
+function classTeacherLabel(label){
+ const str=String(label||'').trim();
+ const bits=str.split('·').map(x=>x.trim()).filter(Boolean);
+ if(!/^수업/.test(str))return '동아리'===bits[0]?'동아리':(bits[0]||'수업');
+ // Stored room uses follow "수업 · 교사명 · 과목", but single-token
+ // entries such as "수업 · 연극" are not reliable teacher names.
+ const teacher=bits[1]||'';
+ return /^수업$/.test(bits[0]) && bits.length>=3 && /^[가-힣]{2,5}$/.test(teacher)?'수업 · '+teacher:'수업';
+}
 function renderRooms(){
  const day=ui.date,rooms=(state.data?.roomChoices||[]).filter(x=>x&&x!=='미정');
  if(!rooms.length)return '<div class="empty">등록된 면접실이 없습니다.</div>';
  const head=rooms.map(r=>'<th class="yg-room-name">'+esc(r)+'</th>').join('');
  const rows=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+rooms.map(r=>{
-  const info=usageInfo(day,p,r),kind=info.kind==='class'?'classuse':info.kind==='interview'?'session':info.kind,mine=kind==='manual'&&info.booking.teacher===state.auth.name;
+  const info=usageInfo(day,p,r),kind=info.kind==='class'?'classuse':info.kind==='interview'?'session':info.kind;
+  const mine=kind==='manual'?info.booking?.teacher===state.auth.name:
+             kind==='session'?(info.session?.teacher===state.auth.name||(info.session?.teachers||[]).includes(state.auth.name)):false;
   const busy=kind==='free'&&teacherBusyAt(day,p);
-  const canAct=(kind==='free'&&!busy)||mine;
-  const tag=kind==='free'?'예약 가능':kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'수업';
-  const detail=kind==='free'?(busy?'내 일정 있어 예약 불가':''):kind==='classuse'?(info.label||info.text||''):(kind==='manual'?info.booking.student:(info.session?.students||[]).join('·'));
-  const reason=busy?'면접실은 비어 있지만, 같은 교시에 내 다른 면접이 있어 예약할 수 없습니다.':(info.label||info.text||'');
-  const cssKind=kind+(busy?' busy-self':'');
-  return '<td><button class="yg-room-btn '+cssKind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(reason)+'" aria-label="'+esc((kind==='free'?'예약 가능':'예약됨')+(busy?' · 내 면접 일정과 중복되어 예약 불가':''))+'"><strong>'+tag+'</strong>'+esc(detail)+'</button></td>';
+  const canAct=(kind==='free'&&!busy)||(kind==='manual'&&mine);
+  const emptyDueToBusy=kind==='free'&&busy;
+  const tag=emptyDueToBusy?'':kind==='free'?'예약':kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'';
+  const detail=emptyDueToBusy?'':kind==='free'?'':kind==='classuse'?classTeacherLabel(info.label||info.text):
+     kind==='manual'?(info.booking.teacher+' · '+info.booking.student):
+     ((info.session?.teacher||'')+' · '+(info.session?.students||[]).join('·'));
+  const cssKind=kind+(emptyDueToBusy?' busy-self':'')+(mine?' is-mine':'');
+  const title=emptyDueToBusy?'':[tag,detail].filter(Boolean).join(' · ');
+  return '<td><button class="yg-room-btn '+cssKind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(title)+'" aria-label="'+esc(emptyDueToBusy?'빈 칸':title||'예약 가능')+'">'+(tag?'<strong>'+esc(tag)+'</strong>':'')+(detail?'<span class="yg-room-detail">'+esc(detail)+'</span>':'')+'</button></td>';
  }).join('')+'</tr>').join('');
- return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">직접 예약</span><span class="session">제시문</span><span class="classuse">수업</span></div>';
+ return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">직접 예약</span><span class="session">제시문</span><span class="classuse">수업</span><span class="mine">내 면접 일정</span></div>';
 }
 function itemHtml(entry){
  const s=entry.data;
