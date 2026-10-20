@@ -94,3 +94,5 @@
 .yg-room-legend .session::before{background:#dcfce7!important}
 .yg-room-btn.manual{background:#ffefaa!important;color:#92400e!important}
 .yg-room-legend .manual::before{background:#ffefaa!important}
+
+.yg-room-btn.busy{background:#f1f5f9!important;color:#64748b!important;cursor:not-allowed!important}
