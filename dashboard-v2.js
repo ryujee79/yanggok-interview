@@ -183,6 +183,14 @@ function renderEditBookingModal(){
  '<button type="button" id="ygEditDelete" class="btn danger"'+(ui.editSaving?' disabled':'')+'>예약 취소</button>'+
  '</div></form></section></div>';
 }
+function confirmSoyulClassInStudentText(value){
+ const text=String(value||'').trim();
+ if(!text.includes('김소율') || text.includes('김소율(2반)') || text.includes('김소율(7반)'))return text;
+ const selected=window.prompt('김소율 학생은 동명이인입니다.\n2반이면 2, 7반이면 7을 입력해 주세요.','');
+ if(selected===null)return null;
+ if(!['2','7'].includes(selected.trim())){alert('2 또는 7을 입력해 주세요.');return null;}
+ return text.replaceAll('김소율','김소율('+selected.trim()+'반)');
+}
 async function saveBookingEdit(){
  if(ui.editSaving)return;
  const orig=(state.data?.manualBookings||[]).find(x=>x.id===ui.editBookingId&&x.teacher===state.auth?.name);
@@ -193,6 +201,9 @@ async function saveBookingEdit(){
   room:qs('#ygEditRoom')?.value||'',
   student:(qs('#ygEditStudent')?.value||'').trim()
  };
+ const confirmedStudent=confirmSoyulClassInStudentText(payload.student);
+ if(confirmedStudent===null)return;
+ payload.student=confirmedStudent;
  ui.editDraft=payload;
  if(!payload.student){ui.editError='면접 학생을 입력해 주세요.';render();return;}
  if(!payload.dateKey||!Number.isInteger(payload.period)||!payload.room){ui.editError='날짜, 교시, 면접실을 확인해 주세요.';render();return;}
@@ -239,8 +250,10 @@ function bookingConflictUI(date,period,room,student,excludeBookingId){
 async function bookRoom(room,p){
  const date=ui.date,info=usageInfo(date,p,room);
  if(info.kind==='free'){
-  const student=prompt(fmtDate(date)+' '+p+'교시 '+room+'\n면접 학생 이름을 입력하세요.');
-  if(!student?.trim())return;
+  const entered=prompt(fmtDate(date)+' '+p+'교시 '+room+'\n면접 학생 이름을 입력하세요.');
+  if(!entered?.trim())return;
+  const student=confirmSoyulClassInStudentText(entered);
+  if(!student)return;
   const conflict=bookingConflictUI(date,p,room,student.trim());
   if(conflict){state.error=conflict;render();return;}
   try{await apiCall('createManualBooking',{token:state.token,dateKey:date,period:p,room,student:student.trim()});state.notice='직접 예약했습니다.';await refreshState(true);}
