@@ -2,7 +2,7 @@ function uploadRecording_(payload) {
   const auth = requireAuth_(payload, 'student');
   const sessionId = String(payload.sessionId || '');
   const sessions = readObjects_('sessions').map(decodeSession_);
-  const session = sessions.find(s => s.id === sessionId && s.students.includes(auth.name));
+  const session = sessions.find(s => s.id === sessionId && studentOwnsInterview_(auth,s));
   if (!session) throw new Error('학생 본인의 일정만 녹음을 저장할 수 있습니다.');
   const mimeType = String(payload.mimeType || 'audio/webm');
   const fileName = safeFileName_((payload.fileName || (auth.name + '_' + sessionId + '.webm')));
@@ -25,7 +25,7 @@ function deleteRecording_(payload) {
   const materials = readObjects_('materials');
   const current = materials.find(m => m.id === id && m.kind === 'recording');
   if (!current) throw new Error('녹음 파일을 찾지 못했습니다.');
-  if (auth.role === 'student' && current.student !== auth.name) throw new Error('본인의 녹음만 삭제할 수 있습니다.');
+  if (auth.role === 'student' && (current.student !== auth.name || (auth.name === '김소율' && Number(auth.classNo) !== 7))) throw new Error('본인의 녹음만 삭제할 수 있습니다.');
   trashFile_(current.fileId);
   writeObjects_('materials', materials.filter(m => m.id !== id));
   addHistory_(auth.name, '면접 답변 녹음 삭제', current.fileName);
@@ -108,7 +108,7 @@ function downloadMaterial_(payload) {
   const current = materials.find(m => m.id === id);
   if (!current) throw new Error('파일을 찾지 못했습니다.');
   if (auth.role === 'student') {
-    const sessions = readObjects_('sessions').map(decodeSession_).filter(s => s.students.includes(auth.name));
+    const sessions = readObjects_('sessions').map(decodeSession_).filter(s => studentOwnsInterview_(auth,s));
     const sessionIds = new Set(sessions.map(s => s.id));
     const teams = new Set(sessions.map(s => s.team));
     const allowed = (current.kind === 'recording' && current.student === auth.name && sessionIds.has(current.sessionId)) ||
