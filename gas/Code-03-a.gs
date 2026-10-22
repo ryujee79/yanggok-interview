@@ -11,7 +11,7 @@ function uploadSchedule_(payload) {
     const normalized = incoming.map(s => {
       const old = oldMap[String(s.id || '')];
       const teachers = splitTeachers_(s.teacher || (Array.isArray(s.teachers) ? s.teachers.join('·') : ''));
-      const students = Array.isArray(s.students) ? s.students.map(String).map(x => x.trim()).filter(Boolean) : [];
+      const students = eligibleInterviewStudents_(Array.isArray(s.students) ? s.students.map(String).map(x => x.trim()).filter(Boolean) : []);
       return {
         id: String(s.id || '').trim(), team: String(s.team || ''), group: String(s.group || ''), dateText: String(s.dateText || ''),
         period: String(s.period || '전체'), slotIndex: Number(s.slotIndex || 0), teacher: teachers.join('·'), teachers, students,
@@ -79,4 +79,23 @@ function cancelManualBooking_(payload) {
   writeObjects_('bookings', bookings.filter(x => x.id !== id));
   addHistory_(auth.name, '면접실 직접 예약 취소', current.dateKey + ' ' + current.period + '교시 ' + current.room + ' · ' + current.student);
   return { cancelled: true };
+}
+
+// Run once in the deployed GAS editor to apply corrections to existing Sessions rows.
+// This does not change Users, passwords, manual bookings or other access rights.
+function applyInterviewEligibilityCorrections() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sessions = readObjects_('sessions').map(decodeSession_);
+    let removed = 0;
+    sessions.forEach(s=>{
+      const kept = eligibleInterviewStudents_(s.students);
+      removed += s.students.length - kept.length;
+      s.students = kept;
+    });
+    if (removed) writeObjects_('sessions',sessions.map(encodeSession_));
+    // Do not call syncStudents_ here: established students keep their login accounts.
+    return {removed, sessions:sessions.length, usersUnchanged:true};
+  } finally {lock.releaseLock();}
 }
