@@ -23,7 +23,9 @@ function syncStudents_(sessions) {
   const current = readObjects_('users');
   const map = {};
   current.forEach(u => map[u.name] = u);
-  const names = Array.from(new Set(sessions.reduce((acc, s) => acc.concat(s.students || []), []))).filter(Boolean).sort();
+  // Retain all established student accounts even if their interview schedule is removed.
+  const names = Array.from(new Set(current.map(u=>u.name).concat(
+    sessions.reduce((acc,s)=>acc.concat(s.students||[]), []), ['김소율(2반)']))).filter(Boolean).sort();
   const now = new Date().toISOString();
   const next = names.map(name => map[name] || { name, passwordHash:'', updatedAt:now });
   writeObjects_('users', next);
