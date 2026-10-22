@@ -12,10 +12,13 @@ function renderSetup(){
 
 function renderLogin(){
   if(!state.apiUrl && !CONFIG.apiUrl) return renderSetup();
-  app.innerHTML=`<main class="login-wrap"><section class="login-card"><div class="eyebrow">YANGGOK 2027</div><h1>제시문 면접 지도 일정</h1><p>교사는 이름과 개인 4자리 번호, 학생은 이름과 비밀번호로 로그인합니다.</p><div class="role-tabs"><button id="teacherTab" class="${state.role==='teacher'?'active':''}">교사</button><button id="studentTab" class="${state.role==='student'?'active':''}">학생</button></div><label class="field"><span>이름</span><input id="loginName" autocomplete="name" placeholder="${state.role==='teacher'?'교사 이름':'학생 이름'}"></label><label class="field"><span>비밀번호</span><input id="loginPassword" type="password" inputmode="${state.role==='teacher'?'numeric':'text'}" ${state.role==='teacher'?'maxlength="4"':''} placeholder="${state.role==='teacher'?'개인 4자리 번호':'초기 비밀번호 1234'}"></label>${state.error?`<div class="alert error">${esc(state.error)}</div>`:''}<button id="loginBtn" class="btn primary" style="width:100%">로그인</button><button id="changeApi" class="btn" style="width:100%;margin-top:8px">백엔드 주소 변경</button><div class="footer-note">학생은 최초 로그인 후 개인 비밀번호로 변경합니다.</div></section></main>`;
+  app.innerHTML=`<main class="login-wrap"><section class="login-card"><div class="eyebrow">YANGGOK 2027</div><h1>제시문 면접 지도 일정</h1><p>교사는 이름과 개인 4자리 번호, 학생은 이름과 비밀번호로 로그인합니다.</p><div class="role-tabs"><button id="teacherTab" class="${state.role==='teacher'?'active':''}">교사</button><button id="studentTab" class="${state.role==='student'?'active':''}">학생</button></div><label class="field"><span>이름</span><input id="loginName" autocomplete="name" placeholder="${state.role==='teacher'?'교사 이름':'학생 이름'}"></label><label class="field" id="soyulClassField" style="display:none"><span>김소율 학생 반 선택</span><select id="soyulClass"><option value="">반을 선택해 주세요</option><option value="2">2반 김소율</option><option value="7">7반 김소율</option></select></label><label class="field"><span>비밀번호</span><input id="loginPassword" type="password" inputmode="${state.role==='teacher'?'numeric':'text'}" ${state.role==='teacher'?'maxlength="4"':''} placeholder="${state.role==='teacher'?'개인 4자리 번호':'초기 비밀번호 1234'}"></label>${state.error?`<div class="alert error">${esc(state.error)}</div>`:''}<button id="loginBtn" class="btn primary" style="width:100%">로그인</button><button id="changeApi" class="btn" style="width:100%;margin-top:8px">백엔드 주소 변경</button><div class="footer-note">학생은 최초 로그인 후 개인 비밀번호로 변경합니다.</div></section></main>`;
   qs('#teacherTab').onclick=()=>{state.role='teacher';state.error='';localStorage.setItem('yi-role','teacher');renderLogin();};
   qs('#studentTab').onclick=()=>{state.role='student';state.error='';localStorage.setItem('yi-role','student');renderLogin();};
   qs('#changeApi').onclick=()=>{state.apiUrl='';localStorage.removeItem('yi-api-url');renderSetup();};
+  const updateSoyul=()=>{const f=qs('#soyulClassField');if(f)f.style.display=(state.role==='student'&&qs('#loginName').value.trim()==='김소율')?'block':'none';};
+  qs('#loginName').addEventListener('input',updateSoyul);
+  updateSoyul();
   qs('#loginBtn').onclick=login;
   qs('#loginPassword').onkeydown=e=>{if(e.key==='Enter')login();};
 }
@@ -23,10 +26,12 @@ function renderLogin(){
 async function login(){
   const name=qs('#loginName').value.trim(), password=qs('#loginPassword').value;
   if(!name||!password){state.error='이름과 비밀번호를 입력해 주세요.';return renderLogin();}
+  const classNo = state.role==='student'&&name==='김소율'?Number(qs('#soyulClass')?.value):0;
+  if(state.role==='student'&&name==='김소율'&&![2,7].includes(classNo)){alert('김소율 학생은 2반 또는 7반을 선택해 주세요.');return;}
   const btn=qs('#loginBtn');btn.disabled=true;btn.textContent='로그인 중...';state.error='';
   try{
-    const res=await apiCall('login',{role:state.role,name,password});
-    state.token=res.token;state.auth={role:res.role,name:res.name,mustChange:!!res.mustChange};
+    const res=await apiCall('login',{role:state.role,name,password,classNo});
+    state.token=res.token;state.auth={role:res.role,name:res.name,mustChange:!!res.mustChange,classNo:res.classNo||classNo};
     localStorage.setItem('yi-token',state.token);localStorage.setItem('yi-role',res.role);
     if(res.mustChange){state.modal='changePassword';render();return;}
     await refreshState(true);
@@ -39,7 +44,16 @@ async function refreshState(renderAfter=true){
   if(!state.token) return;
   try{
     const data=await apiCall('getState',{token:state.token});
-    state.data=data;state.auth=data.auth||state.auth;state.lastStateAt=Date.now();state.error='';
+    // Keep excluded students' accounts active, but never show their interview assignments.
+    data.sessions=(data.sessions||[]).map(s=>({...s,students:(s.students||[]).filter(n=>!['김지호','박소정','한지민'].includes(n))}));
+    const classNo=Number(data.auth?.classNo||state.auth?.classNo||0);
+    if((data.auth?.name||state.auth?.name)==='김소율' && ![2,7].includes(classNo)){
+      logout();state.error='김소율 학생은 반을 선택하여 다시 로그인해 주세요.';renderLogin();return;
+    }
+    if((data.auth?.name||state.auth?.name)==='김소율' && classNo===2 && (data.auth?.role||state.auth?.role)==='student'){
+      data.sessions=[];data.materials=[];
+    }
+    state.data=data;state.auth={...(data.auth||state.auth),classNo};state.lastStateAt=Date.now();state.error='';
     if(renderAfter) render();
   }catch(e){ if(/만료/.test(e.message)){logout();return;} state.error=e.message;if(renderAfter)render(); }
 }
