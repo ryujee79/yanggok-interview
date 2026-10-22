@@ -1,6 +1,16 @@
 const APP_VERSION = '2026-09-17-github-gas-v2';
 const DEFAULT_ALLOWED_ORIGIN = 'https://ryujee79.github.io';
 const INITIAL_STUDENT_PASSWORD = '1234';
+// Interview eligibility changes do not revoke existing student login rights.
+const INTERVIEW_EXCLUDED_STUDENTS = ['김지호','박소정','한지민'];
+function eligibleInterviewStudents_(names) {
+  return (names || []).filter(n => !INTERVIEW_EXCLUDED_STUDENTS.includes(String(n).trim()));
+}
+function studentOwnsInterview_(auth, session) {
+  return !(auth.name === '김소율' && Number(auth.classNo) !== 7) &&
+    eligibleInterviewStudents_(session.students || []).includes(auth.name);
+}
+
 const TOKEN_TTL_SECONDS = 21600;
 const ROOM_CHOICES = ['미정','면접지도실','과학실1','과학실2','특별실1','특별실3','라온실','데이터분석실','해양학습실'];
 const SHEETS = {
