@@ -3,7 +3,7 @@
 'use strict';
 const lessonsSeed={"고승":[[1,3,5,6],[3,4],[2,4,5,7],[5,6],[1,4]],"권혁":[[1,3,4,6],[2,5],[4,5,7],[2,5,6],[4]],"기윤":[[1,3,4,6],[2,4,6],[3,4,6,7],[2,5,6],[1,3,4]],"김계":[[1,2,4,5],[3,4],[1,4,6,7],[1,3,4,6],[3,4]],"김낙":[[2,5],[1,3,4,6],[4,6],[4,5],[1,4]],"김대":[[1,4,6],[4,5],[3,4,7],[3,5,6],[3,4]],"김병":[[3,4,6],[1,2,5,6],[2,3,5,6],[1,2,4],[2,4]],"김영":[[2,3,5],[4,6],[2,3,5,7],[2,3,5],[2,3]],"김점":[[3,4],[1,5],[1,3,4,7],[1,3,5,6],[2,4]],"김중":[[1,3,4,6],[2,4,5],[1,3,4,6],[1,3,4],[1,4]],"김지":[[1,2,5,6],[2,3,5,6],[1,2,3,5,6],[1,3,4,6],[1,2,4]],"김진":[[3,5,6],[1,2,4,6],[1,4,5,7],[2,3,6],[2,4]],"김희":[[2,4],[1,6],[2,5,6],[1,4,5],[2]],"노석":[[2,3],[1,4,6],[2,4,5,6],[1,2,4,5],[2,4]],"박문":[[2,3,5],[3,4,6],[2,3,5],[1,2,5],[1,2,3]],"박윤":[[1,2,4],[1,2,5,6],[2,3,5],[1,2,4,6],[1,3]],"손유":[[2,4,6],[2,3],[2,3,5,7],[2,4,6],[1,3]],"송대":[[2,4,5],[3,4],[3,4,6,7],[1,2,4,5,6],[2,4]],"신연":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"신해":[[3,5,6],[2,3,5],[1,3,4],[3,4],[3]],"안진":[[1,2,5],[1,3,4,6],[2,3,5,6],[2,4,6],[2,3]],"오중":[[1,3,4,6],[1,2,5],[1,3,5,7],[2,3,6],[2,3]],"유미":[[1,3,4,6],[2,4,5],[1,3,4,5,7],[2,3,5,6],[3,4]],"유은":[[1,2,4,5],[1,2,5,6],[1,3,6,7],[3,6],[1,2]],"유제":[[1,3,5,6],[2,3,5,6],[1,2],[3,4],[1,2]],"유종":[[1,3,5,6],[2,3,5,6],[3,5,7],[2,4,6],[2,3]],"유지":[[1,2,4],[1,2,4,5],[4,5,7],[2,3,5],[1,3,4]],"윤혜":[[1,3,4,6],[2,5],[1,3,5,7],[2,3,6],[3]],"이경":[[2,5],[1,2,4,6],[1,2,4,6],[1,4,5],[1,4]],"이기":[[3,4,6],[3,4],[1,2,4,6],[2,3,5],[3]],"이나":[[1,3,4,6],[3,4,6],[1,3,5,7],[1,2,4,6],[2,3]],"이병":[[2,4,5],[1,3,5],[3,4,6,7],[2,3,5,6],[2,4]],"이석":[[1,5,6],[1,3,4,5],[2,4,6],[1,3,4],[1,2,4]],"이수":[[1,2,3,5,6],[2,3,4,5,6],[1,2,3,5,6,7],[1,2,3,5,6],[1,3,4]],"이주":[[3,5],[1,3],[1,2,6,7],[1,2,4],[1,2]],"이진":[[3,4],[1,4,6],[2,4,5,7],[5,6],[1,3,4]],"인상":[[1,2,5],[1,3,5],[1,2,4,6],[1,3,5],[1,4]],"장덕":[[2,5,6],[1,2,5,6],[1,2,6],[1,3,4],[1,2]],"장현":[[1,2,4],[1,2,5],[1,3,5,7],[2,3,6],[3]],"정수":[[1,2,4,6],[1,2,3],[1,3,5,6],[1,3,4],[2,3]],"조현":[[2,3,5,6],[1,3,5],[1,3,4,7],[1,5],[1,3]],"천세":[[2,4,6],[1,3,4,6],[1,2,5,6],[1,4,6],[2,3]],"최성":[[1,3,4],[2,4,6],[2,4,5,7],[1,2,5,6],[1,3,4]],"홍상":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"황혜":[[1,3,5,6],[2,3,5,6],[1,2,6],[1,3,4],[1,2]]};
 const kstToday=()=>{const f=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const p=k=>f.find(x=>x.type===k).value;return p('year')+'-'+p('month')+'-'+p('day');};
-const ui={scope:'mine',past:false,date:kstToday(),focus:'',searchDraft:'',editBookingId:'',editDraft:null,editError:'',editSaving:false,notice:'',noticeTimeout:null};
+const ui={scope:'mine',past:false,date:kstToday(),focus:'',searchDraft:'',soyulSearchClass:'',editBookingId:'',editDraft:null,editError:'',editSaving:false,notice:'',noticeTimeout:null};
 let activeLessons=lessonsSeed;
 try{const s=JSON.parse(localStorage.getItem('yi-class-timetable-v1')||'null');if(s&&typeof s==='object'&&Object.keys(s).length)activeLessons=s;}catch(_){}
 const legacyRender=render,legacySessionCard=sessionCard;
@@ -20,7 +20,16 @@ function allEntries(){
   const ss=(state.data?.sessions||[]).filter(s=>state.studentQuery?.trim()?true:matchesScope(s)).map(data=>({type:'session',data}));
   const bb=(state.data?.manualBookings||[]).filter(b=>state.studentQuery?.trim()||ui.scope==='all'||ui.scope==='mine'&&b.teacher===state.auth.name).map(data=>({type:'manual',data}));
   let out=[...ss,...bb].filter(x=>ui.past?dateKey(x)<kstToday():dateKey(x)>=kstToday());
-  if(state.studentQuery){const q=state.studentQuery.trim();out=out.filter(e=>(e.type==='session'?(e.data.students||[]).join(' '):e.data.student||'').includes(q));}
+  if(state.studentQuery){
+    const q=state.studentQuery.trim();
+    out=out.filter(e=>(e.type==='session'?(e.data.students||[]).join(' '):e.data.student||'').includes(q));
+    if(q==='김소율'){
+      // The interview roster's 김소율 is always the seventh-class student.
+      if(ui.soyulSearchClass==='7') out=out.filter(e=>e.type==='session'?(e.data.students||[]).includes('김소율'):(e.data.student||'').includes('7반'));
+      else if(ui.soyulSearchClass==='2') out=out.filter(e=>e.type==='manual'&&(e.data.student||'').includes('2반'));
+      else out=[];
+    }
+  }
   return out.sort(itemSort);
 }
 function weekDates(date){const ix=dayIndex(date),offset=ix<0?(new Date(date+'T12:00:00').getDay()===0?-6:-5): -ix;const first=dateOffset(date,offset);return Array.from({length:5},(_,i)=>dateOffset(first,i));}
@@ -246,10 +255,19 @@ async function cancelBooking(id){
 function bindDashEvents(){
  qs('#ygScope')?.addEventListener('change',e=>{ui.scope=e.target.value;render();});
  qs('#ygStudentSearch')?.addEventListener('input',e=>{ui.searchDraft=e.target.value;});
- const applyStudentSearch=()=>{ui.searchDraft=(qs('#ygStudentSearch')?.value||'').trim();state.studentQuery=ui.searchDraft;render();};
+ const applyStudentSearch=()=>{
+    ui.searchDraft=(qs('#ygStudentSearch')?.value||'').trim();
+    if(ui.searchDraft==='김소율'){
+      const selected=window.prompt('김소율 학생은 동명이인입니다.\n2반 김소율은 2, 7반 김소율은 7을 입력해 주세요.\n제시문 면접 대상자는 7반 김소율입니다.','');
+      if(selected===null)return;
+      if(!['2','7'].includes(selected.trim())){alert('2 또는 7을 입력해 주세요.');return;}
+      ui.soyulSearchClass=selected.trim();
+    }else ui.soyulSearchClass='';
+    state.studentQuery=ui.searchDraft;render();
+  };
  qs('#ygSearchBtn')?.addEventListener('click',applyStudentSearch);
  qs('#ygStudentSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyStudentSearch();}});
- qs('#ygResetSearchBtn')?.addEventListener('click',()=>{ui.searchDraft='';state.studentQuery='';ui.scope='mine';ui.past=false;ui.date=kstToday();render();});
+ qs('#ygResetSearchBtn')?.addEventListener('click',()=>{ui.searchDraft='';state.studentQuery='';ui.soyulSearchClass='';ui.scope='mine';ui.past=false;ui.date=kstToday();render();});
  qs('#ygNow')?.addEventListener('click',()=>{ui.past=false;render();});
  qs('#ygPast')?.addEventListener('click',()=>{ui.past=true;render();});
  qs('#ygTimetableBtn')?.addEventListener('click',()=>qs('#ygPanelTimetable')?.scrollIntoView({behavior:'smooth',block:'nearest'}));
