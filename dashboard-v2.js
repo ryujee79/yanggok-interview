@@ -183,13 +183,20 @@ function renderEditBookingModal(){
  '<button type="button" id="ygEditDelete" class="btn danger"'+(ui.editSaving?' disabled':'')+'>예약 취소</button>'+
  '</div></form></section></div>';
 }
-function confirmSoyulClassInStudentText(value){
- const text=String(value||'').trim();
- if(!text.includes('김소율') || text.includes('김소율(2반)') || text.includes('김소율(7반)'))return text;
- const selected=window.prompt('김소율 학생은 동명이인입니다.\n2반이면 2, 7반이면 7을 입력해 주세요.','');
- if(selected===null)return null;
- if(!['2','7'].includes(selected.trim())){alert('2 또는 7을 입력해 주세요.');return null;}
- return text.replaceAll('김소율','김소율('+selected.trim()+'반)');
+function confirmStudentClassesInText(value){
+  let text=String(value||'').trim();
+  const duplicates=state.data?.duplicateStudentClasses||{};
+  for(const [name,classes] of Object.entries(duplicates)){
+    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const pattern=new RegExp('(^|[\\s,，、·\\/＆&+])('+escaped+')(?!\\s*[（(]\\s*\\d+\\s*반\\s*[）)])(?=$|[\\s,，、·\\/＆&+])','g');
+    if(!pattern.test(text))continue;
+    const picked=window.prompt(name+' 학생은 동명이인입니다.\\n해당 학생의 반을 선택하세요: '+classes.map(n=>n+'반').join(' / '),'');
+    if(picked===null)return null;
+    const classNo=Number(picked.replace(/반/g,'').trim());
+    if(!classes.includes(classNo)){alert(name+' 학생의 반을 정확히 선택해 주세요.');return null;}
+    text=text.replace(pattern,(_,before,student)=>before+student+'('+classNo+'반)');
+  }
+  return text;
 }
 async function saveBookingEdit(){
  if(ui.editSaving)return;
@@ -201,7 +208,7 @@ async function saveBookingEdit(){
   room:qs('#ygEditRoom')?.value||'',
   student:(qs('#ygEditStudent')?.value||'').trim()
  };
- const confirmedStudent=confirmSoyulClassInStudentText(payload.student);
+ const confirmedStudent=confirmStudentClassesInText(payload.student);
  if(confirmedStudent===null)return;
  payload.student=confirmedStudent;
  ui.editDraft=payload;
@@ -252,7 +259,7 @@ async function bookRoom(room,p){
  if(info.kind==='free'){
   const entered=prompt(fmtDate(date)+' '+p+'교시 '+room+'\n면접 학생 이름을 입력하세요.');
   if(!entered?.trim())return;
-  const student=confirmSoyulClassInStudentText(entered);
+  const student=confirmStudentClassesInText(entered);
   if(!student)return;
   const conflict=bookingConflictUI(date,p,room,student.trim());
   if(conflict){state.error=conflict;render();return;}
