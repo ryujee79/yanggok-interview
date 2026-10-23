@@ -185,16 +185,21 @@ function renderEditBookingModal(){
 }
 function confirmStudentClassesInText(value){
   let text=String(value||'').trim();
-  const duplicates=state.data?.duplicateStudentClasses||{};
-  for(const [name,classes] of Object.entries(duplicates)){
-    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    const pattern=new RegExp('(^|[\\s,，、·\\/＆&+])('+escaped+')(?!\\s*[（(]\\s*\\d+\\s*반\\s*[）)])(?=$|[\\s,，、·\\/＆&+])','g');
+  const duplicates=state.data?.duplicateStudentOptions||{};
+  for(const [name,options] of Object.entries(duplicates)){
+    const pattern=new RegExp('(^|[\\s,，、·\\/＆&+])('+name+')(?!\\s*[（(]\\s*(?:\\d+반|3\\d{3})\\s*[）)])(?=$|[\\s,，、·\\/＆&+])','g');
     if(!pattern.test(text))continue;
-    const picked=window.prompt(name+' 학생은 동명이인입니다.\\n해당 학생의 반을 선택하세요: '+classes.map(n=>n+'반').join(' / '),'');
+    const labels=options.map(o=>o.classNo+'반 '+o.studentNo);
+    const picked=window.prompt(name+' 학생은 동명이인입니다.\n해당 학생의 반 또는 학번을 입력하세요.\n'+labels.join(' / '),'');
     if(picked===null)return null;
-    const classNo=Number(picked.replace(/반/g,'').trim());
-    if(!classes.includes(classNo)){alert(name+' 학생의 반을 정확히 선택해 주세요.');return null;}
-    text=text.replace(pattern,(_,before,student)=>before+student+'('+classNo+'반)');
+    const typed=picked.trim().replace(/반/g,'');
+    const byNo=options.find(o=>o.studentNo===typed);
+    const byClass=options.filter(o=>String(o.classNo)===typed);
+    const selected=byNo||(byClass.length===1?byClass[0]:null);
+    if(!selected){alert('반이 같은 동명이인은 학번 4자리로 구분해 주세요.');return null;}
+    const classCount=options.filter(o=>o.classNo===selected.classNo).length;
+    const suffix=classCount>1?selected.studentNo:selected.classNo+'반';
+    text=text.replace(pattern,(_,before,student)=>before+student+'('+suffix+')');
   }
   return text;
 }
