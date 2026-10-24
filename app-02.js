@@ -49,7 +49,7 @@ async function refreshState(renderAfter=true){
 function allStudents(){ return state.data ? [...new Set(state.data.sessions.flatMap(s=>s.students||[]))].sort((a,b)=>a.localeCompare(b,'ko')) : []; }
 function allTeachers(){ return state.data ? [...new Set(state.data.sessions.flatMap(s=>s.teachers||splitTeachers(s.teacher)))].sort((a,b)=>a.localeCompare(b,'ko')) : []; }
 function currentSessions(){ if(!state.data||!state.auth)return[]; return sortSessions(state.auth.role==='teacher'?state.data.sessions.filter(s=>(s.teachers||splitTeachers(s.teacher)).includes(state.auth.name)):state.data.sessions.filter(s=>(s.students||[]).includes(state.auth.name))); }
-function userTeams(){return [...new Set(currentSessions().map(s=>s.team))];}
+function userTeams(){return [...new Set(currentSessions().map(displayTeam))];}
 function materialList(kind, filter=()=>true){ return (state.data?.materials||[]).filter(m=>m.kind===kind && filter(m)); }
 function sessionMaterials(session,kind){
   const mats=state.data?.materials||[];
