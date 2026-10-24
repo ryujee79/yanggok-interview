@@ -15,7 +15,7 @@ const period=item=>item.type==='manual'?Number(item.data.period):sessionPeriod(i
 const itemSort=(a,b)=>dateKey(a).localeCompare(dateKey(b))||period(a)-period(b)||String(a.data.id).localeCompare(String(b.data.id));
 const isMineSession=s=>(s.teachers||splitTeachers(s.teacher)).includes(state.auth.name);
 const mineBookings=()=> (state.data?.manualBookings||[]).filter(b=>b.teacher===state.auth.name);
-function matchesScope(s){return ui.scope==='all'||ui.scope==='mine'&&isMineSession(s)||ui.scope===s.team;}
+function matchesScope(s){return ui.scope==='all'||ui.scope==='mine'&&isMineSession(s)||ui.scope===displayTeam(s);}
 function allEntries(){
   const ss=(state.data?.sessions||[]).filter(s=>state.studentQuery?.trim()?true:matchesScope(s)).map(data=>({type:'session',data}));
   const bb=(state.data?.manualBookings||[]).filter(b=>state.studentQuery?.trim()||ui.scope==='all'||ui.scope==='mine'&&b.teacher===state.auth.name).map(data=>({type:'manual',data}));
@@ -116,7 +116,7 @@ function dashboardRender(){
  const expanded=new Set(qsa('details[data-yg-detail][open]').map(n=>n.dataset.ygDetail));
 
  const entries=allEntries(),today=kstToday(),todayCount=(state.data?.sessions||[]).length;
- const scopeLabel={mine:'나의 일정',all:'전체 일정',humanities:'고려대(인문)&연세대팀',natural:'고려대(자연)팀'}[ui.scope];
+ const scopeLabel={mine:'나의 일정',all:'전체 일정',humanities:'고려대(인문)',yonsei:'연세대',natural:'고려대(자연)팀'}[ui.scope];
  const search='<div class="yg-head-search"><label for="ygStudentSearch">학생 찾기</label><input id="ygStudentSearch" list="studentNames" value="'+esc(ui.searchDraft)+'" placeholder="학생 이름 입력" autocomplete="off"><datalist id="studentNames">'+allStudents().map(n=>'<option value="'+esc(n)+'"></option>').join('')+'</datalist><button type="button" class="btn" id="ygSearchBtn">조회</button><button type="button" class="btn" id="ygResetSearchBtn">초기화</button></div>';
  app.innerHTML='<main class="shell yg-dashboard"><header class="topbar"><div class="brand"><small>YANGGOK 2027</small><h1>제시문 면접 지도</h1></div><div class="userbox"><span class="pill">교사 · '+esc(state.auth.name)+'</span><button class="btn" id="refreshBtn">새로고침</button><button class="btn" id="logoutBtn">로그아웃</button></div></header>'+
  '<nav class="yg-head-menu" aria-label="면접 일정 관리 메뉴">'+
@@ -133,7 +133,7 @@ function dashboardRender(){
  '</nav>'+
  (state.notice?'<div class="alert success yg-flash">'+esc(state.notice)+'</div>':'')+(state.error?'<div class="alert error">'+esc(state.error)+'</div>':'')+
  '<div class="yg-workspace">'+
- '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><div class="yg-panel-context"><select id="ygScope" aria-label="일정 범위 선택"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)&연세대팀</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
+ '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><div class="yg-panel-context"><select id="ygScope" aria-label="일정 범위 선택"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)</option><option value="yonsei"'+(ui.scope==='yonsei'?' selected':'')+'>연세대</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
  '<section class="yg-panel" id="ygPanelTimetable"><div class="yg-panel-head"><h2>내 시간표 보기</h2><span class="count">'+esc(state.auth.name)+'</span></div><div class="yg-panel-body">'+renderTimetable()+'</div></section>'+
  '<section class="yg-panel" id="ygPanelRooms"><div class="yg-panel-head"><h2>실별 사용 현황</h2><div class="yg-date-tools"><button class="btn" id="ygPrev" aria-label="전날">‹</button><input id="ygDate" type="date" value="'+esc(ui.date)+'"><button class="btn" id="ygNext" aria-label="다음날">›</button></div></div><div class="yg-panel-body">'+renderRooms()+'</div></section>'+
  '</div></main>'+renderModal()+renderEditBookingModal();
