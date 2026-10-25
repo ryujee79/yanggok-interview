@@ -17,6 +17,15 @@ function bindDynamicEvents(){
   qsa('[data-download-material]').forEach(b=>b.onclick=()=>b.dataset.downloadMaterial&&downloadMaterial(b.dataset.downloadMaterial,false));
   qsa('[data-delete-reference]').forEach(b=>b.onclick=()=>deleteReference(b.dataset.deleteReference));
   qsa('[data-reference-upload]').forEach(inp=>inp.onchange=e=>{const f=e.target.files?.[0];if(f)uploadReference(inp.dataset.referenceUpload,f);e.target.value='';});
+  qsa('[data-teacher-upload]').forEach(inp=>inp.onchange=e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    if(!/\.pdf$/i.test(file.name)){state.error='교사용 자료는 PDF만 업로드할 수 있습니다.';render();return;}
+    const session=(state.data?.sessions||[]).find(s=>s.id===inp.dataset.teacherUpload);
+    if(!session){state.error='면접 일정을 찾지 못했습니다.';render();return;}
+    const fileName=String(session.pdfFile||'면접제시문').replace(/\.pdf$/i,'')+'(교사용).pdf';
+    uploadReference(session.id,new File([file],fileName,{type:'application/pdf'}));
+    inp.value='';
+  });
   qsa('[data-period]').forEach(sel=>sel.onchange=()=>changeSession(sel.dataset.period,{classPeriod:sel.value,location:'미정'}));
   qsa('[data-location]').forEach(sel=>sel.onchange=()=>changeSession(sel.dataset.location,{location:sel.value}));
   qsa('[data-swap]').forEach(b=>b.onclick=()=>{state.modal='swap';state.modalData=b.dataset.swap;render();});
