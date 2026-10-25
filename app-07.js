@@ -15,7 +15,15 @@ function parseWorkbook(book){
 }
 async function uploadScheduleFile(file){try{state.notice='일정 엑셀을 읽는 중입니다.';render();const book=XLSX.read(await file.arrayBuffer(),{type:'array'});const sessions=parseWorkbook(book);state.notice='70개 일정을 서버에 반영하는 중입니다.';render();const res=await apiCall('uploadSchedule',{token:state.token,sessions},120000);state.notice=`업로드 완료 · 총 ${res.count}건`;await refreshState(true);}catch(e){state.error=e.message;state.notice='';render();}}
 
-setInterval(()=>{if(state.token&&state.auth&&!Object.values(state.recorder).some(r=>['recording','paused'].includes(r.status))){refreshState(false).then(()=>{if(!state.modal)render();}).catch(()=>{});}},CONFIG.pollMs||8000);
+// Keep polling the server, but do not rebuild the entire screen when nothing changed.
+setInterval(()=>{
+ if(!state.token||!state.auth||state.busy||Object.values(state.recorder).some(r=>['recording','paused'].includes(r.status)))return;
+ const previousData=JSON.stringify(state.data);
+ const previousError=state.error;
+ refreshState(false).then(()=>{
+   if(!state.modal&&(JSON.stringify(state.data)!==previousData||state.error!==previousError))render();
+ }).catch(()=>{});
+},CONFIG.pollMs||8000);
 
 (async function boot(){
   if(!state.apiUrl&&!CONFIG.apiUrl){renderSetup();return;}
