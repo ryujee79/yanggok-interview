@@ -114,6 +114,12 @@ function dashboardRender(){
  if(!state.token||!state.auth||state.auth.role!=='teacher'||!state.data||state.auth.mustChange)return legacyRender();
  if(state.data.teacherTimetables && Object.keys(state.data.teacherTimetables).length) activeLessons=state.data.teacherTimetables;
  const expanded=new Set(qsa('details[data-yg-detail][open]').map(n=>n.dataset.ygDetail));
+ // Save independent scroll positions before rebuilding any dashboard HTML.
+ const panelScroll=new Map(qsa('.yg-panel[id]').map(panel=>{
+   const body=panel.querySelector('.yg-panel-body');
+   return [panel.id,body?{top:body.scrollTop,left:body.scrollLeft}:null];
+ }));
+ const viewportScroll={top:window.scrollY,left:window.scrollX};
 
  const entries=allEntries(),today=kstToday(),todayCount=(state.data?.sessions||[]).length;
  const scopeLabel={mine:'나의 일정',all:'전체 일정',humanities:'고려대(인문)',yonsei:'연세대',natural:'고려대(자연)팀'}[ui.scope];
@@ -139,6 +145,13 @@ function dashboardRender(){
  '</div></main>'+renderModal()+renderEditBookingModal();
  qsa('details[data-yg-detail]').forEach(n=>{if(expanded.has(n.dataset.ygDetail))n.open=true;});
  bindMainEvents();bindDashEvents();
+ panelScroll.forEach((position,id)=>{
+   const body=qs('#'+id+' .yg-panel-body');
+   if(body&&position){body.scrollTop=position.top;body.scrollLeft=position.left;}
+ });
+ if(window.scrollY!==viewportScroll.top||window.scrollX!==viewportScroll.left){
+   window.scrollTo(viewportScroll.left,viewportScroll.top);
+ }
 
  if(state.notice&&/완료|예약했습니다|취소했습니다|변경했습니다|삭제했습니다|추가했습니다|반영했습니다|업로드했습니다/.test(state.notice)){
   if(ui.notice!==state.notice){ui.notice=state.notice;if(ui.noticeTimeout)clearTimeout(ui.noticeTimeout);ui.noticeTimeout=setTimeout(()=>{if(state.notice===ui.notice){state.notice='';ui.notice='';render();}},3500);}
@@ -277,8 +290,34 @@ async function cancelBooking(id){
  try{await apiCall('cancelManualBooking',{token:state.token,id});if(ui.editBookingId===id){ui.editBookingId='';ui.editDraft=null;ui.editError='';}state.notice='직접 예약을 취소했습니다.';await refreshState(true);}
  catch(e){state.error=e.message;render();}
 }
+// A clicked interview determines the date shown by the room and timetable calendars.
+function selectInterviewDate(sessionId){
+ const session=(state.data?.sessions||[]).find(s=>s.id===sessionId);
+ const nextDate=session?dateKeyFromText(session.dateText):'';
+ if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(nextDate)||ui.date===nextDate)return;
+ ui.date=nextDate;
+ const dateInput=qs('#ygDate');if(dateInput)dateInput.value=nextDate;
+ const timetable=qs('#ygPanelTimetable .yg-panel-body');
+ if(timetable)timetable.innerHTML=renderTimetable();
+ const roomBody=qs('#ygPanelRooms .yg-panel-body');
+ if(roomBody){
+   const top=roomBody.scrollTop,left=roomBody.scrollLeft;
+   roomBody.innerHTML=renderRooms();
+   roomBody.scrollTop=top;roomBody.scrollLeft=left;
+   qsa('[data-yg-book]',roomBody).forEach(btn=>btn.addEventListener('click',()=>{
+     const [room,p]=btn.dataset.ygBook.split('|');
+     bookRoom(decodeURIComponent(room),Number(p));
+   }));
+ }
+}
 function bindDashEvents(){
  qs('#ygScope')?.addEventListener('change',e=>{ui.scope=e.target.value;render();});
+ qsa('details[data-yg-detail] > summary').forEach(summary=>summary.addEventListener('click',()=>{
+   selectInterviewDate(summary.parentElement.dataset.ygDetail);
+ }));
+ qsa('details[data-yg-detail] [data-period],details[data-yg-detail] [data-location]').forEach(field=>
+   field.addEventListener('focus',()=>selectInterviewDate(field.closest('details').dataset.ygDetail))
+ );
  qs('#ygStudentSearch')?.addEventListener('input',e=>{ui.searchDraft=e.target.value;});
  const applyStudentSearch=()=>{
     ui.searchDraft=(qs('#ygStudentSearch')?.value||'').trim();
