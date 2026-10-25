@@ -76,6 +76,10 @@ function classTeacherLabel(label){
  if(parts.length<3||!/^[가-힣]{2,5}T?$/.test(name))return '수업';
  return teacherT(name)+'\n(수업)';
 }
+function roomWeekday(date){
+ const day=new Date(date+'T12:00:00').getDay();
+ return '('+['일','월','화','수','목','금','토'][day]+')';
+}
 function renderRooms(){
  const day=ui.date,rooms=(state.data?.roomChoices||[]).filter(x=>x&&x!=='미정');
  if(!rooms.length)return '<div class="empty">등록된 면접실이 없습니다.</div>';
@@ -91,10 +95,13 @@ function renderRooms(){
   const detail=emptyDueToBusy?'':kind==='free'?'':kind==='classuse'?classTeacherLabel(info.label||info.text):
      kind==='manual'?teacherStudents(info.booking.teacher,info.booking.student):
      teacherStudents(info.session?.teacher,info.session?.students||[]);
+  const detailLines=String(detail||'').split('\n');
+  const hasTeacher=detailLines.length>1&&/T$/.test(detailLines[0]);
+  const detailHtml=hasTeacher?'<strong class="yg-room-teacher">'+esc(detailLines[0])+'</strong>'+esc(detailLines.slice(1).join('\n')):esc(detail);
   const cssKind=kind+(emptyDueToBusy?' busy-self':'')+(mine?' is-mine':'');
   const kindLabel=kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'';
   const title=emptyDueToBusy?'':[kindLabel,tag,detail].filter(Boolean).join(' · ');
-  return '<td><button class="yg-room-btn '+cssKind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(title)+'" aria-label="'+esc(emptyDueToBusy?'빈 칸':title||'예약 가능')+'">'+(tag?'<strong>'+esc(tag)+'</strong>':'')+(detail?'<span class="yg-room-detail">'+esc(detail)+'</span>':'')+'</button></td>';
+  return '<td><button class="yg-room-btn '+cssKind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(title)+'" aria-label="'+esc(emptyDueToBusy?'빈 칸':title||'예약 가능')+'">'+(tag?'<strong>'+esc(tag)+'</strong>':'')+(detail?'<span class="yg-room-detail">'+detailHtml+'</span>':'')+'</button></td>';
  }).join('')+'</tr>').join('');
  return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">직접 예약</span><span class="session">제시문</span><span class="classuse">수업</span><span class="mine">내 면접 일정</span></div>';
 }
@@ -141,7 +148,7 @@ function dashboardRender(){
  '<div class="yg-workspace">'+
  '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><div class="yg-panel-context"><select id="ygScope" aria-label="일정 범위 선택"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)</option><option value="yonsei"'+(ui.scope==='yonsei'?' selected':'')+'>연세대</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
  '<section class="yg-panel" id="ygPanelTimetable"><div class="yg-panel-head"><h2>내 시간표 보기</h2><span class="count">'+esc(state.auth.name)+'</span></div><div class="yg-panel-body">'+renderTimetable()+'</div></section>'+
- '<section class="yg-panel" id="ygPanelRooms"><div class="yg-panel-head"><h2>실별 사용 현황</h2><div class="yg-date-tools"><button class="btn" id="ygPrev" aria-label="전날">‹</button><input id="ygDate" type="date" value="'+esc(ui.date)+'"><button class="btn" id="ygNext" aria-label="다음날">›</button></div></div><div class="yg-panel-body">'+renderRooms()+'</div></section>'+
+ '<section class="yg-panel" id="ygPanelRooms"><div class="yg-panel-head"><h2>실별 사용 현황</h2><div class="yg-date-tools"><button class="btn" id="ygPrev" aria-label="전날">‹</button><input id="ygDate" type="date" value="'+esc(ui.date)+'"><span id="ygRoomWeekday" class="yg-room-weekday">'+roomWeekday(ui.date)+'</span><button class="btn" id="ygNext" aria-label="다음날">›</button></div></div><div class="yg-panel-body">'+renderRooms()+'</div></section>'+
  '</div></main>'+renderModal()+renderEditBookingModal();
  qsa('details[data-yg-detail]').forEach(n=>{if(expanded.has(n.dataset.ygDetail))n.open=true;});
  bindMainEvents();bindDashEvents();
@@ -297,6 +304,7 @@ function selectInterviewDate(sessionId){
  if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(nextDate)||ui.date===nextDate)return;
  ui.date=nextDate;
  const dateInput=qs('#ygDate');if(dateInput)dateInput.value=nextDate;
+ const weekday=qs('#ygRoomWeekday');if(weekday)weekday.textContent=roomWeekday(nextDate);
  const timetable=qs('#ygPanelTimetable .yg-panel-body');
  if(timetable)timetable.innerHTML=renderTimetable();
  const roomBody=qs('#ygPanelRooms .yg-panel-body');
