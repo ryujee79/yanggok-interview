@@ -6,12 +6,7 @@ async function swapSessions(mode){const target=qs('#swapTarget')?.value;if(!targ
 async function downloadMaterial(id,play){
  const item=(state.data?.materials||[]).find(m=>m.id===id);
  if(state.auth?.role==='student'&&item?.fileId&&item.mimeType==='application/pdf'){
-   // Student downloads use the school-domain shared Drive file instead of a teacher-only Apps Script material endpoint.
-   const link=document.createElement('a');
-   link.href='https://drive.google.com/file/d/'+encodeURIComponent(item.fileId)+'/view';
-   link.target='_blank';link.rel='noopener noreferrer';
-   document.body.appendChild(link);link.click();link.remove();
-   return;
+   return downloadPublishedFile(item.fileId,item.fileName||'면접 자료.pdf');
  }
  try{state.notice='자료를 불러오는 중입니다.';render();const res=await apiCall('downloadMaterial',{token:state.token,id},120000);const blob=base64ToBlob(res.base64,res.mimeType);state.notice='';if(play){const url=URL.createObjectURL(blob);const audio=new Audio(url);audio.controls=true;audio.autoplay=true;const w=window.open('','_blank','width=520,height=180');if(w){w.document.write(`<meta charset="utf-8"><title>${esc(res.fileName)}</title><body style="font-family:sans-serif;padding:20px"><h3>${esc(res.fileName)}</h3><audio controls autoplay style="width:100%" src="${url}"></audio></body>`);}else audio.play();setTimeout(()=>URL.revokeObjectURL(url),300000);}else downloadBlob(blob,res.fileName);render();}catch(e){state.error=e.message;state.notice='';render();} }
 
