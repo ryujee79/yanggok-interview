@@ -15,6 +15,19 @@ function bindDynamicEvents(){
   qs('#closeModal')?.addEventListener('click',()=>{state.modal=null;state.modalData=null;render();});
   qs('#saveNewPassword')?.addEventListener('click',changePassword);
   qsa('[data-download-material]').forEach(b=>b.onclick=()=>b.dataset.downloadMaterial&&downloadMaterial(b.dataset.downloadMaterial,false));
+  // Student resource links use Drive IDs instead of material IDs; bind them as well.
+  qsa('[data-published-id]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.publishedId, name=b.dataset.publishedName||'면접 자료';
+    if(!/^[A-Za-z0-9_-]{15,}$/.test(id||'')){state.error='다운로드할 파일 정보를 찾지 못했습니다.';render();return;}
+    const material=(state.data?.materials||[]).find(m=>m.fileId===id);
+    if(material){downloadMaterial(material.id,false);return;}
+    // For resources not returned in a student session payload, open the Drive file.
+    const url='https://drive.google.com/file/d/'+encodeURIComponent(id)+'/view';
+    const link=document.createElement('a');
+    link.href=url;link.target='_blank';link.rel='noopener noreferrer';
+    link.setAttribute('download',name);
+    document.body.appendChild(link);link.click();link.remove();
+  });
   qsa('[data-delete-reference]').forEach(b=>b.onclick=()=>deleteReference(b.dataset.deleteReference));
   qsa('[data-reference-upload]').forEach(inp=>inp.onchange=e=>{const f=e.target.files?.[0];if(f)uploadReference(inp.dataset.referenceUpload,f);e.target.value='';});
   qsa('[data-teacher-upload]').forEach(inp=>inp.onchange=e=>{
