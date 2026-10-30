@@ -461,11 +461,13 @@ function normalizeStudentView(){
 }
 
 function studentRoomStatus(date,p,room){
+ const available=Array.isArray(state.data?.roomOccupancy);
  const occ=(state.data?.roomOccupancy||[]).filter(u=>u.room===room&&Number(u.period)===p&&(u.dateKey?u.dateKey===date:Number(u.weekday)===new Date(date+'T12:00:00').getDay()));
  const ownSession=(state.data?.sessions||[]).find(x=>dateKeyFromText(x.dateText)===date&&sessionPeriod(x)===p&&x.location===room);
  if(ownSession)return {kind:'own-session',label:teacherStudents(ownSession.teacher,ownSession.students||[])};
  const ownBooking=(state.data?.manualBookings||[]).find(x=>x.dateKey===date&&Number(x.period)===p&&x.room===room);
  if(ownBooking)return {kind:ownBooking.kind==='practice'?'own-practice':'own-interview',label:teacherStudents(ownBooking.teacher,ownBooking.student)};
+ if(!available)return {kind:'unknown',label:'확인 불가'};
  if(occ.some(x=>['classuse','session','interview','manual'].includes(x.kind)))return {kind:'other-busy',label:'수업 또는 면접 예약'};
  if(occ.some(x=>x.kind==='practice'))return {kind:'other-practice',label:'개인연습'};
  return {kind:'free',label:'비어 있음'};
@@ -487,10 +489,10 @@ function renderStudentRooms(){
  '<input id="ygStudentDate" type="date" value="'+esc(date)+'">'+
  '<span>'+roomWeekday(date)+'</span>'+
  '<button type="button" class="btn" id="ygStudentNext" aria-label="다음날">›</button></div></div>'+
- (available?'<div class="yg-student-room-scroll"><table class="yg-rooms"><thead><tr><th>교시</th>'+
+ '<div class="yg-student-room-scroll"><table class="yg-rooms"><thead><tr><th>교시</th>'+
  rooms.map(room=>'<th>'+esc(room)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
- '<div class="yg-student-legend"><span class="mine">내 면접 일정</span><span class="busy">수업·면접 예약</span><span class="practice">개인연습</span></div>':
- '<div class="empty">실별 사용 현황을 읽지 못했습니다. 서버 업데이트 후 새로고침해 주세요.</div>')+
+ '<div class="yg-student-legend"><span class="mine">내 면접 일정</span><span class="busy">수업·면접 예약</span><span class="practice">개인연습</span></div>'+ 
+ (available?'':'<div class="alert" role="status">전체 면접실 현황은 서버 연결이 완료되지 않아 확인할 수 없습니다. 본인 예약만 표시되며, 나머지 칸은 예약 가능을 뜻하지 않습니다.</div>')+
  '</section>';
 }
 function bindStudentRoomDate(){
