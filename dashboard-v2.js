@@ -488,7 +488,8 @@ function studentRoomStatus(date,p,room){
  const ownPractices=ownBookings.filter(x=>x.kind==='practice');
  if(!available&&!ownPractices.length)return {kind:'unknown',label:'확인 불가'};
  if(occ.some(x=>x.kind==='classuse'))return {kind:'other-class',label:'수업'};
- if(occ.some(x=>['session','interview','manual'].includes(x.kind)))return {kind:'other-interview',label:'선생님과 면접'};
+ if(occ.some(x=>x.kind==='session'))return {kind:'other-session',label:'제시문 면접'};
+ if(occ.some(x=>['interview','manual'].includes(x.kind)))return {kind:'other-interview',label:'선생님과 면접'};
  const practices=occ.filter(x=>x.kind==='practice');
  if(practices.length||ownPractices.length){
    const labels=practices.flatMap(x=>String(x.label||'').split('\n')).map(x=>x.trim()).filter(Boolean);
@@ -518,7 +519,7 @@ function renderStudentRooms(){
  '<button type="button" class="btn" id="ygStudentNext" aria-label="다음날">›</button></div></div>'+
  '<div class="yg-student-room-scroll"><table class="yg-rooms"><thead><tr><th>교시</th>'+
  rooms.map(room=>'<th>'+esc(room)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
- '<div class="yg-student-legend"><span class="mine">내 면접 일정</span><span class="class">수업</span><span class="interview">선생님과 면접</span><span class="practice">개인연습</span></div>'+ 
+ '<div class="yg-student-legend"><span class="mine">내 면접 일정</span><span class="class">수업</span><span class="session">제시문 면접</span><span class="interview">선생님과 면접</span><span class="practice">개인연습</span></div>'+ 
  (live?'':available?'<div class="alert" role="status">예약 현황은 '+esc(new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'short',timeStyle:'short'}).format(new Date(snapshot.generatedAt)))+' 기준입니다. 실시간 정보가 아니므로 이후 추가·변경된 예약은 반영되지 않을 수 있습니다.</div>':'<div class="alert" role="status">전체 면접실 사용 상태를 확인할 수 없습니다. 이 화면의 빈 칸은 예약 가능을 뜻하지 않습니다.</div>')+
  '</section>';
 }
