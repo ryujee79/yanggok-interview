@@ -47,6 +47,59 @@ function teacherStudents(teacher,studentNames){
  const list=(Array.isArray(studentNames)?studentNames:uiStudentNames(studentNames)).map(n=>String(n||'').trim()).filter(Boolean);
  return teacherT(teacher)+'\n('+list.join(',')+')';
 }
+// Grade/class assignments from the 2026 second-semester whole-school timetable.
+// Each compact token is period + grade + class (e.g. 133 => 1st period, class 3-3).
+const teacherClassLabels = Object.fromEntries(`고승|117,314,538,611;338,437;212,437,513,716;518,615;138,437
+권혁|134,327,426,635;235,534;428,527,726;227,528,626;428
+기윤|113,317,422,615;211,426,614;326,425,618,722;212,525,622;116,326,425
+김계|118,216,415,514;311,413;113,412,617,715;118,314,416,611;317,412
+김낙|232,535;137,335,436,632;436,637;437,532;135,436
+김대|138,428,634;425,538;325,427,728;334,527,628;325,427
+김병|311,413,612;117,214,516,615;218,316,511,614;117,213,412;218,415
+김영|215,322,517;423,611;213,323,522,712;222,318,516;214,323
+김점|315,427;111,513;118,317,426,727;114,312,526,627;216,426
+김중|114,312,411,613;213,414,512;111,313,414,612;112,313,411;111,414
+김지|123,222,516,621;225,325,522,623;121,215,318,516,625;122,323,415,617;118,221,417
+김진|318,511,616;113,215,416,612;117,415,514,711;214,317,613;212,418
+김희|237,418;134,637;236,517,634;136,434,537;236
+노석|233,324;131,438,633;234,438,524,631;134,224,431,533;234,438
+박문|235,328,537;337,427,635;238,327,528;138,228,535;137,238,327
+박윤|122,227,433;123,237,532,621;228,335,536;126,231,424,638;125,334
+손유|221,431,622;233,321;222,332,531,734;234,422,632;121,333
+송대|234,424,531;331,435;321,435,632,723;133,225,432,534,624;233,422
+신연|231,534;135,334,433,631;232,433,635;132,435,531;134,232,433
+신해|316,512,631;217,314,518;132,315,411;331,413;332
+안진|116,217,513;114,316,411,618;211,314,512,615;215,417,618;213,312
+오중|132,336,435,627;128,234,527;136,331,533,732;233,335,634;228,331
+유미|131,335,437,633;236,424,531;135,324,423,532,737;232,333,523,636;324,423
+유은|127,228,434,525;127,228,526,625;128,334,626,733;326,633;127,225
+유제|133,331,524,632;222,326,533,628;131,221;332,425;123,227
+유종|128,332,523,626;231,327,525,624;333,534,738;235,421,637;222,336
+유지|115,218,417;118,216,415,517;416,518,717;218,316,515;117,315,416
+윤혜|136,334,432,637;232,536;134,338,535,731;238,337,631;335
+이경|236,528;126,227,431,636;127,226,431,628;127,428,536;126,431
+이기|337,416,638;317,418;137,217,418,616;216,338,517;318
+이나|111,321,425,618;312,422,616;115,322,521,725;113,221,414,625;217,322
+이병|211,414,518;116,313,514;312,417,611,718;217,315,512,616;215,413
+이석|137,532,636;133,332,434,537;231,434,633;131,336,433;132,231,434
+이수|126,214,326,527,628;212/24,324,428,515/28,626;116/26,227,328,526,624,713;128,211/26,311/27,513/14,612;112/14,313/28,411
+이주|338,536;138,336;138,237,638,736;137,236,438;136,237
+이진|325,423;132,421,634;233,422,525,724;522,623;131,321,435
+인상|121,224,522;122,323,521;124,223,421,621;123,322,521;124,421
+장덕|225,521,623;125,221,524,622;122,224,623;121,325,423;122,224
+장현|124,223,436;124,238,523;123,336,537,735;237,324,635;338
+정수|125,226,438,624;121,223,322;125,337,538,622;124,321,426;223,337
+조현|212,313,515,614;112,315,511;112,311,413,714;115,511;113,314
+천세|213,412,617;115,318,412,617;114,216,515,613;111,418,614;211,316
+최성|112,323,421;218,417,613;214,424,523,721;116,223,524,621;115,311,424
+홍상|238,533;136,333,432,638;235,432,636;135,436,538;133,235,432
+황혜|135,333,526,625;226,328,535,627;133,225,627;125,328,427;128,226`.split('\n').map(line=>{
+ const [teacher,week]=line.split('|');
+ return [teacher,week.split(';').map(day=>Object.fromEntries((day?day.split(','):[]).map(entry=>[
+  Number(entry.charAt(0)),
+  entry.slice(1).split('/').map(group=>group.charAt(0)+'-'+group.charAt(1)).join('/')
+ ])))];
+}));
 function renderTimetable(){
  const lesson=activeLessons[state.auth.name.slice(0,2)];
  const week=weekDates(ui.date),currDay=dayIndex(ui.date);
@@ -54,11 +107,14 @@ function renderTimetable(){
  const cells=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+week.map((d,i)=>{
   const cls=Boolean(lesson?.[i]?.includes(p)),a=atSlot(d,p);
   const interviewKind=a.hasSession?'제시문면접':a.hasManual?'일반면접':'';
-  const heading=interviewKind?(cls?'수업&':'')+interviewKind:(cls?'수업':'');
-  const text=interviewKind?heading+'\n('+a.names.join(',')+')'+(a.rooms.length?'\n'+a.rooms.join(','):''):heading;
-  const color=a.hasSession?'yg-interview':a.hasPractice?'yg-practice-lesson':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
+  const className=cls?(teacherClassLabels[state.auth.name.slice(0,2)]?.[i]?.[p]||'학급 확인 필요'):'';
+  const interviewText=interviewKind?interviewKind+'\n('+a.names.join(',')+')'+(a.rooms.length?'\n'+a.rooms.join(','):''):'';
+  const text=[className,interviewText].filter(Boolean).join('\n');
+  const classHtml=cls?'<span class="yg-timetable-class '+(interviewKind?'has-interview':'class-only')+'">'+esc(className)+'</span>':'';
+  const interviewHtml=interviewText?'<span class="yg-timetable-interview">'+esc(interviewText)+'</span>':'';
+  const color=a.hasSession?'yg-interview':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
   const actionLabel=d+' '+roomWeekday(d)+' '+p+'교시 예약 및 수정';
-  return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'" data-yg-slot="'+esc(d)+'|'+p+'" role="button" tabindex="0" aria-label="'+esc(actionLabel)+'">'+(text?esc(text):'')+'</td>';
+  return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'" data-yg-slot="'+esc(d)+'|'+p+'" role="button" tabindex="0" aria-label="'+esc(actionLabel)+'">'+classHtml+interviewHtml+'</td>';
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
