@@ -316,6 +316,7 @@ function renderNewBookingModal(){
 }
 function openTimetableBooking(date,period){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isInteger(period)||period<1||period>8)return;
+ ui.date=date; // Keep room availability on the same date as the clicked timetable cell.
  ui.newBooking={source:'timetable',dateKey:date,period,room:'',kind:'interview',student:''};
  ui.bookingError='';ui.bookingSaving=false;state.error='';
  render();
