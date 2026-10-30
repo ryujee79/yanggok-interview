@@ -12,7 +12,7 @@ function studentOwnsInterview_(auth, session) {
 }
 
 const TOKEN_TTL_SECONDS = 21600;
-const ROOM_CHOICES = ['미정','면접지도실','과학실1','과학실2','특별실1','특별실3','라온실','데이터분석실','해양학습실'];
+const ROOM_CHOICES = ['미정','면접지도실','과학실1','과학실2','특별실1','특별실3','라온실','데이터분석실','해양학습실','진로상담실','학생회실'];
 const SHEETS = {
   sessions: ['id','team','group','dateText','period','slotIndex','teacher','teachers','students','prompt','pdfFile','classPeriod','location','updatedAt'],
   users: ['name','passwordHash','updatedAt'],
