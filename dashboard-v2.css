@@ -311,3 +311,12 @@
 @media(max-width:600px){.yg-student-room-panel .panel-head{flex-wrap:wrap}.yg-student-date-controls{width:100%}}
 
 .yg-student-room-cell.unknown{background:#f1f5f9;color:#64748b}
+
+/* Student-only room-status palette; teacher dashboard rules are untouched. */
+.yg-student-only .yg-student-room-cell.free{background:#fff!important;color:#64748b!important}
+.yg-student-only .yg-student-room-cell.other-class{background:#b8c0ca!important;color:#253242!important}
+.yg-student-only .yg-student-room-cell.other-interview{background:#fff2b6!important;color:#80570b!important}
+.yg-student-only .yg-student-room-cell.other-practice{background:#dbeafe!important;color:#1e40af!important}
+.yg-student-only .yg-student-legend .class::before{background:#b8c0ca}
+.yg-student-only .yg-student-legend .interview::before{background:#fff2b6}
+.yg-student-only .yg-student-legend .practice::before{background:#dbeafe}
