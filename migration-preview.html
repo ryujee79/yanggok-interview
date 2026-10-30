@@ -25,10 +25,11 @@
   <script src="https://cdn.jsdelivr.net/gh/ryujee79/yanggok-interview@02b9a0689d98dc8466e21a2f0ed85f0de2d2e4bc/migration-session-fix.js"></script>
   <script src="./app-06.js?v=20261023-no-recording-1"></script>
   <script src="./app-07.js?v=20261025-scroll-calendar-1"></script>
+  <script src="./room-occupancy-snapshot.js?v=20261030-1838"></script>
   <script>
     // Load the current dashboard on every page visit; students previously saw a cached legacy view.
     const dashboardScript = document.createElement('script');
-    dashboardScript.src = './dashboard-v2.js?build=20261030-student-color-status&fresh=' + Date.now();
+    dashboardScript.src = './dashboard-v2.js?build=20261030-snapshot-room-data&fresh=' + Date.now();
     dashboardScript.onload = () => {
       if (typeof render === 'function' && state?.auth?.role === 'student' && state?.data) render();
     };
