@@ -460,9 +460,15 @@ function normalizeStudentView(){
  nav.append(future,past);panel.prepend(nav);
 }
 
+function studentRoomOccupancy(){
+ // Live server data always overrides the dated anonymous snapshot.
+ if(Array.isArray(state.data?.roomOccupancy))return state.data.roomOccupancy;
+ return Array.isArray(window.YANGGOK_ROOM_SNAPSHOT?.records)?window.YANGGOK_ROOM_SNAPSHOT.records:null;
+}
 function studentRoomStatus(date,p,room){
- const available=Array.isArray(state.data?.roomOccupancy);
- const occ=(state.data?.roomOccupancy||[]).filter(u=>u.room===room&&Number(u.period)===p&&(u.dateKey?u.dateKey===date:Number(u.weekday)===new Date(date+'T12:00:00').getDay()));
+ const occupancy=studentRoomOccupancy();
+ const available=Array.isArray(occupancy);
+ const occ=(occupancy||[]).filter(u=>u.room===room&&Number(u.period)===p&&(u.dateKey?u.dateKey===date:Number(u.weekday)===new Date(date+'T12:00:00').getDay()));
  const ownSession=(state.data?.sessions||[]).find(x=>dateKeyFromText(x.dateText)===date&&sessionPeriod(x)===p&&x.location===room);
  if(ownSession)return {kind:'own-session',label:teacherStudents(ownSession.teacher,ownSession.students||[])};
  const ownBooking=(state.data?.manualBookings||[]).find(x=>x.dateKey===date&&Number(x.period)===p&&x.room===room);
@@ -476,7 +482,9 @@ function studentRoomStatus(date,p,room){
 function renderStudentRooms(){
  const date=ui.studentDate;
  const rooms=(state.data?.roomChoices||[]).filter(x=>x&&x!=='미정');
- const available=Array.isArray(state.data?.roomOccupancy);
+ const available=Array.isArray(studentRoomOccupancy());
+ const live=Array.isArray(state.data?.roomOccupancy);
+ const snapshot=window.YANGGOK_ROOM_SNAPSHOT;
  const rows=Array.from({length:8},(_,i)=>i+1).map(p=>
    '<tr><th>'+p+'교시</th>'+rooms.map(room=>{
     const entry=studentRoomStatus(date,p,room);
@@ -493,7 +501,7 @@ function renderStudentRooms(){
  '<div class="yg-student-room-scroll"><table class="yg-rooms"><thead><tr><th>교시</th>'+
  rooms.map(room=>'<th>'+esc(room)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<div class="yg-student-legend"><span class="mine">내 면접 일정</span><span class="class">수업</span><span class="interview">선생님과 면접</span><span class="practice">개인연습</span></div>'+ 
- (available?'':'<div class="alert" role="status">전체 면접실 현황은 서버 연결이 완료되지 않아 확인할 수 없습니다. 본인 예약만 표시되며, 나머지 칸은 예약 가능을 뜻하지 않습니다.</div>')+
+ (live?'':available?'<div class="alert" role="status">예약 현황은 '+esc(new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'short',timeStyle:'short'}).format(new Date(snapshot.generatedAt)))+' 기준입니다. 실시간 정보가 아니므로 이후 추가·변경된 예약은 반영되지 않을 수 있습니다.</div>':'<div class="alert" role="status">전체 면접실 사용 상태를 확인할 수 없습니다. 이 화면의 빈 칸은 예약 가능을 뜻하지 않습니다.</div>')+
  '</section>';
 }
 function bindStudentRoomDate(){
