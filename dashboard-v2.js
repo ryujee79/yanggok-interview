@@ -493,16 +493,28 @@ function renderStudentRooms(){
  '<div class="empty">실별 사용 현황을 읽지 못했습니다. 서버 업데이트 후 새로고침해 주세요.</div>')+
  '</section>';
 }
-function appendStudentRooms(){
- const root=qs('main.shell');if(!root)return;
- root.insertAdjacentHTML('beforeend',renderStudentRooms());
+function bindStudentRoomDate(){
  qs('#ygStudentPrev')?.addEventListener('click',()=>{ui.studentDate=dateOffset(ui.studentDate,-1);render();});
  qs('#ygStudentNext')?.addEventListener('click',()=>{ui.studentDate=dateOffset(ui.studentDate,1);render();});
  qs('#ygStudentDate')?.addEventListener('change',e=>{if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){ui.studentDate=e.target.value;render();}});
 }
-
+function studentDashboardRender(){
+ if(!state.token||!state.auth||!state.data||state.auth.mustChange)return legacyRender();
+ // Student accounts can view room availability only; scheduling and document
+ // controls are exclusively available to teachers.
+ app.innerHTML='<main class="shell yg-student-only">'+
+ '<header class="topbar"><div class="brand"><small>YANGGOK 2027</small><h1>면접실 관리 프로그램</h1></div>'+
+ '<div class="userbox"><span class="pill">학생 · '+esc(state.auth.name)+(state.auth.classNo?' ('+esc(state.auth.classNo)+'반)':'')+'</span>'+
+ '<button type="button" class="btn" id="refreshBtn">새로고침</button>'+
+ '<button type="button" class="btn" id="logoutBtn">로그아웃</button></div></header>'+
+ (state.error?'<div class="alert error">'+esc(state.error)+'</div>':'')+
+ renderStudentRooms()+'</main>';
+ qs('#refreshBtn')?.addEventListener('click',()=>refreshState(true));
+ qs('#logoutBtn')?.addEventListener('click',logout);
+ bindStudentRoomDate();
+}
 render=function(){try{
- if(state.auth?.role==='student'&&state.data&&!state.auth.mustChange){legacyRender();normalizeStudentView();appendStudentRooms();return;}
+ if(state.auth?.role==='student'&&state.data&&!state.auth.mustChange){return studentDashboardRender();}
  return dashboardRender();
 }catch(e){console.error('Dashboard fallback:',e);return legacyRender();}};
 })();
