@@ -378,3 +378,9 @@
 .yg-slot-booking > div:first-child span{color:#475569}
 .yg-slot-actions{display:flex;flex-wrap:wrap;gap:5px;flex-shrink:0}
 @media(max-width:530px){.yg-slot-booking{align-items:flex-start;flex-direction:column}.yg-slot-actions{width:100%}}
+
+/* Teacher timetable: large grade-class for lessons, compact when an interview overlaps. */
+.yg-dashboard .yg-timetable .yg-timetable-class{display:block;line-height:1.3;white-space:normal;overflow-wrap:anywhere;font-weight:800}
+.yg-dashboard .yg-timetable .yg-timetable-class.class-only{font-size:17px}
+.yg-dashboard .yg-timetable .yg-timetable-class.has-interview{font-size:10px;margin-bottom:2px;font-weight:700}
+.yg-dashboard .yg-timetable .yg-timetable-interview{display:block;font-size:11px;line-height:1.3;white-space:pre-line;font-weight:700}
