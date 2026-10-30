@@ -312,11 +312,52 @@
 
 .yg-student-room-cell.unknown{background:#f1f5f9;color:#64748b}
 
-/* Student-only room-status palette; teacher dashboard rules are untouched. */
-.yg-student-only .yg-student-room-cell.free{background:#fff!important;color:#64748b!important}
-.yg-student-only .yg-student-room-cell.other-class{background:#b8c0ca!important;color:#253242!important}
-.yg-student-only .yg-student-room-cell.other-interview{background:#fff2b6!important;color:#80570b!important}
-.yg-student-only .yg-student-room-cell.other-practice{background:#dbeafe!important;color:#1e40af!important}
-.yg-student-only .yg-student-legend .class::before{background:#b8c0ca}
-.yg-student-only .yg-student-legend .interview::before{background:#fff2b6}
-.yg-student-only .yg-student-legend .practice::before{background:#dbeafe}
+/* Shared colors for teacher and student room calendars (2026-10-30).
+   Available: pale red/pink; teacher-led interview: yellow;
+   class: gray; individual practice: blue. Personal bookings keep red outlines. */
+.yg-dashboard{
+ --yg-available-bg:#fbe4ee;
+ --yg-available-fg:#9d426f;
+ --yg-class-bg:#b8c0ca;
+ --yg-class-fg:#253242;
+ --yg-prompt-bg:#fff2b6;
+ --yg-prompt-fg:#80570b;
+ --yg-direct-bg:#fff2b6;
+ --yg-direct-fg:#80570b;
+ --yg-practice-bg:#dbeafe;
+ --yg-practice-fg:#1e40af;
+}
+.yg-dashboard .yg-room-btn.free:not(.busy-self),
+.yg-student-only .yg-student-room-cell.free{
+ background:#fbe4ee!important;color:#9d426f!important;
+}
+.yg-dashboard .yg-room-btn.session,
+.yg-dashboard .yg-room-btn.manual,
+.yg-dashboard .yg-timetable td.yg-interview,
+.yg-dashboard .yg-timetable td.yg-manual-lesson,
+.yg-dashboard .yg-summary-list .yg-session:not(.yg-manual),
+.yg-student-only .yg-student-room-cell.own-session,
+.yg-student-only .yg-student-room-cell.own-interview,
+.yg-student-only .yg-student-room-cell.other-interview{
+ background:#fff2b6!important;color:#80570b!important;
+}
+.yg-dashboard .yg-room-btn.classuse,
+.yg-dashboard .yg-timetable td.yg-class,
+.yg-student-only .yg-student-room-cell.other-class{
+ background:#b8c0ca!important;color:#253242!important;
+}
+.yg-dashboard .yg-room-btn.practice,
+.yg-dashboard .yg-timetable td.yg-practice-lesson,
+.yg-dashboard .yg-summary-list .yg-session.yg-practice,
+.yg-student-only .yg-student-room-cell.own-practice,
+.yg-student-only .yg-student-room-cell.other-practice{
+ background:#dbeafe!important;color:#1e40af!important;
+}
+.yg-dashboard .yg-room-legend .session::before,
+.yg-dashboard .yg-room-legend .manual::before,
+.yg-student-only .yg-student-legend .interview::before{background:#fff2b6!important}
+.yg-dashboard .yg-room-legend .classuse::before,
+.yg-student-only .yg-student-legend .class::before{background:#b8c0ca!important}
+.yg-dashboard .yg-room-legend .practice::before,
+.yg-student-only .yg-student-legend .practice::before{background:#dbeafe!important}
+.yg-student-only .yg-student-legend .mine::before{background:#fff!important;border:2px solid #dc2626!important}
