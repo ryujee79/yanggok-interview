@@ -482,17 +482,18 @@ function studentRoomStatus(date,p,room){
  const occ=(occupancy||[]).filter(u=>u.room===room&&Number(u.period)===p&&(u.dateKey?u.dateKey===date:Number(u.weekday)===new Date(date+'T12:00:00').getDay()));
  const ownSession=(state.data?.sessions||[]).find(x=>dateKeyFromText(x.dateText)===date&&sessionPeriod(x)===p&&x.location===room);
  if(ownSession)return {kind:'own-session',label:teacherStudents(ownSession.teacher,ownSession.students||[])};
- const ownBooking=(state.data?.manualBookings||[]).find(x=>x.kind!=='practice'&&x.dateKey===date&&Number(x.period)===p&&x.room===room);
- if(ownBooking)return {kind:'own-interview',label:teacherStudents(ownBooking.teacher,ownBooking.student)};
- if(!available)return {kind:'unknown',label:'확인 불가'};
+ const ownBookings=(state.data?.manualBookings||[]).filter(x=>x.dateKey===date&&Number(x.period)===p&&x.room===room);
+ const ownInterview=ownBookings.find(x=>x.kind!=='practice');
+ if(ownInterview)return {kind:'own-interview',label:teacherStudents(ownInterview.teacher,ownInterview.student)};
+ const ownPractices=ownBookings.filter(x=>x.kind==='practice');
+ if(!available&&!ownPractices.length)return {kind:'unknown',label:'확인 불가'};
  if(occ.some(x=>x.kind==='classuse'))return {kind:'other-class',label:'수업'};
  if(occ.some(x=>['session','interview','manual'].includes(x.kind)))return {kind:'other-interview',label:'선생님과 면접'};
  const practices=occ.filter(x=>x.kind==='practice');
- if(practices.length){
+ if(practices.length||ownPractices.length){
    const labels=practices.flatMap(x=>String(x.label||'').split('\n')).map(x=>x.trim()).filter(Boolean);
-   const own=(state.data?.manualBookings||[]).filter(x=>x.kind==='practice'&&x.dateKey===date&&Number(x.period)===p&&x.room===room);
-   own.forEach(x=>String(x.displayStudent||'').split('\n').filter(Boolean).forEach(label=>labels.push(label)));
-   return {kind:'other-practice',label:[...new Set(labels)].join('\n')||'개인연습'};
+   ownPractices.forEach(x=>String(x.displayStudent||'').split('\n').filter(Boolean).forEach(label=>labels.push(label)));
+   return {kind:ownPractices.length?'own-practice':'other-practice',label:[...new Set(labels)].join('\n')||'개인연습'};
  }
  return {kind:'free',label:''};
 }
