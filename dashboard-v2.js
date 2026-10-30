@@ -414,7 +414,7 @@ function bindDashEvents(){
  qs('#ygPrev')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,-1);render();});
  qs('#ygNext')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,1);render();});
  qs('#ygDate')?.addEventListener('change',e=>{if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){ui.date=e.target.value;render();}});
- qsa('[data-yg-slot]').forEach(btn=>btn.addEventListener('click',()=>{const [date,p]=btn.dataset.ygSlot.split('|');openTimetableBooking(date,Number(p));}));
+ qs('#ygPanelTimetable')?.addEventListener('click',e=>{const btn=e.target.closest('[data-yg-slot]');if(!btn)return;const [date,p]=btn.dataset.ygSlot.split('|');openTimetableBooking(date,Number(p));});
  qsa('[data-yg-book]').forEach(btn=>btn.addEventListener('click',()=>{const [room,p]=btn.dataset.ygBook.split('|');bookRoom(decodeURIComponent(room),Number(p));}));
  qsa('[data-yg-cancel]').forEach(btn=>btn.addEventListener('click',()=>cancelBooking(btn.dataset.ygCancel)));
  qsa('[data-yg-edit]').forEach(btn=>btn.addEventListener('click',()=>openBookingEditor(btn.dataset.ygEdit)));
