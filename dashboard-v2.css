@@ -6,7 +6,7 @@
 .yg-nav button{border:0;background:transparent;color:#334155;border-radius:7px;padding:7px 10px;font-size:12px;font-weight:750;cursor:pointer}
 .yg-nav button.active{background:#1e40af;color:#fff}
 .yg-tools .btn{font-size:12px;padding:6px 9px}.yg-tools .yg-search{margin-left:auto;display:flex;align-items:center;gap:5px}.yg-search input{width:155px;font-size:12px;padding:6px 8px}
-.yg-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2fr);align-items:stretch;gap:9px;flex:1;min-height:0}
+.yg-workspace{display:grid;grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr) minmax(0,2fr);align-items:stretch;gap:9px;flex:1;min-height:0}
 .yg-workspace .yg-panel{background:#fff;border:1px solid #e1e5ec;border-radius:12px;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .yg-panel .yg-panel-head{padding:10px 12px;border-bottom:1px solid #e7ebf2;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;flex-wrap:wrap}
 .yg-panel-head h2{font-size:15px;margin:0;color:#15284b}.yg-panel-head .count{font-size:12px}
