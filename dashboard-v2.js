@@ -171,7 +171,7 @@ function openBookingEditor(id){
  const b=(state.data?.manualBookings||[]).find(x=>x.id===id&&x.teacher===state.auth?.name);
  if(!b){state.error='본인이 등록한 예약만 수정할 수 있습니다.';render();return;}
  ui.editBookingId=id;
- ui.editDraft={dateKey:b.dateKey,period:Number(b.period),room:b.room,student:b.student};
+ ui.editDraft={dateKey:b.dateKey,period:Number(b.period),room:b.room,student:b.student,kind:b.kind||'interview'};
  ui.editError='';ui.editSaving=false;state.error='';
  render();
  qs('#ygEditStudent')?.focus();
@@ -193,6 +193,7 @@ function renderEditBookingModal(){
  '<form id="ygEditBookingForm"><h2 id="ygEditTitle">직접 예약 수정</h2>'+
  '<p>기존 예약을 유지하면서 학생·날짜·교시·면접실을 변경합니다. 중복 일정은 저장되지 않습니다.</p>'+
  '<div class="yg-edit-fields">'+
+ '<label>예약 유형<select id="ygEditKind"><option value="interview"'+(draft.kind!=='practice'?' selected':'')+'>선생님과 면접</option><option value="practice"'+(draft.kind==='practice'?' selected':'')+'>개인연습</option></select></label>'+
  '<label>면접 학생<input id="ygEditStudent" name="student" type="text" required maxlength="300" value="'+esc(draft.student||'')+'" placeholder="학생 이름을 쉼표로 구분"></label>'+
  '<label>날짜<input id="ygEditDate" name="dateKey" type="date" required value="'+esc(draft.dateKey||'')+'"></label>'+
  '<label>교시<select id="ygEditPeriod" name="period">'+choices(periods,draft.period)+'</select></label>'+
@@ -207,7 +208,7 @@ function renderEditBookingModal(){
 }
 function confirmStudentClassesInText(value){
   let text=String(value||'').trim();
-  const duplicates=state.data?.duplicateStudentOptions||{};
+  const duplicates=Object.assign({'김소율':[{classNo:2,studentNo:''},{classNo:7,studentNo:''}]},state.data?.duplicateStudentOptions||{});
   for(const [name,options] of Object.entries(duplicates)){
     const pattern=new RegExp('(^|[\\s,，、·\\/＆&+])('+name+')(?!\\s*[（(]\\s*(?:\\d+반|3\\d{3})\\s*[）)])(?=$|[\\s,，、·\\/＆&+])','g');
     if(!pattern.test(text))continue;
@@ -233,7 +234,8 @@ async function saveBookingEdit(){
   id:orig.id,dateKey:qs('#ygEditDate')?.value||'',
   period:Number(qs('#ygEditPeriod')?.value),
   room:qs('#ygEditRoom')?.value||'',
-  student:(qs('#ygEditStudent')?.value||'').trim()
+  student:(qs('#ygEditStudent')?.value||'').trim(),
+  kind:qs('#ygEditKind')?.value||'interview'
  };
  const confirmedStudent=confirmStudentClassesInText(payload.student);
  if(confirmedStudent===null)return;
@@ -241,7 +243,7 @@ async function saveBookingEdit(){
  ui.editDraft=payload;
  if(!payload.student){ui.editError='면접 학생을 입력해 주세요.';render();return;}
  if(!payload.dateKey||!Number.isInteger(payload.period)||!payload.room){ui.editError='날짜, 교시, 면접실을 확인해 주세요.';render();return;}
- const conflict=bookingConflictUI(payload.dateKey,payload.period,payload.room,payload.student,orig.id);
+ const conflict=bookingConflictUI(payload.dateKey,payload.period,payload.room,payload.student,orig.id,payload.kind);
  if(conflict){ui.editError=conflict+' 기존 예약은 유지됩니다.';render();return;}
  ui.editSaving=true;ui.editError='';
  const saveBtn=qs('#ygEditBookingForm button[type="submit"]');
@@ -262,37 +264,67 @@ async function saveBookingEdit(){
 function uiStudentNames(value){
  return String(value||'').replace(/\([^)]*\)|（[^）]*）/g,'').split(/[,，、·\/＆&+\n]+|\s+(?=[가-힣]{2,4}(?:\s|$))/).map(x=>x.trim().replace(/\s+/g,'')).filter(Boolean);
 }
-function bookingConflictUI(date,period,room,student,excludeBookingId){
+function bookingConflictUI(date,period,room,student,excludeBookingId,kind='interview'){
  const name=state.auth?.name||'',studentSet=new Set(uiStudentNames(student));
  for(const use of state.data?.roomUses||[]){
   if(roomUseMatches(use,date,period,room))return '해당 면접실은 수업 또는 행사로 사용 중입니다.';
  }
- for(const s of state.data?.sessions||[]){
-  if(dateKeyFromText(s.dateText)!==date||sessionPeriod(s)!==period)continue;
-  if((s.teachers||splitTeachers(s.teacher)).includes(name))return '같은 교시에 이미 제시문 면접이 있습니다. 직접 예약할 수 없습니다.';
-  if((s.students||[]).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 제시문 면접이 이미 있습니다.';
-  if(s.location===room)return '면접실이 같은 교시 제시문 면접으로 사용 중입니다.';
+ for(const session of state.data?.sessions||[]){
+  if(dateKeyFromText(session.dateText)!==date||sessionPeriod(session)!==period)continue;
+  if((session.teachers||splitTeachers(session.teacher)).includes(name))return '같은 교시에 이미 제시문 면접이 있습니다.';
+  if((session.students||[]).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 제시문 면접이 있습니다.';
+  if(session.location===room)return '같은 면접실에 제시문 면접이 있습니다.';
  }
  for(const b of state.data?.manualBookings||[]){
   if(b.id===excludeBookingId||b.dateKey!==date||Number(b.period)!==period)continue;
-  if(b.teacher===name)return '같은 교시에 이미 직접 예약한 면접이 있습니다.';
-  if(uiStudentNames(b.student).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 다른 직접 예약이 이미 있습니다.';
-  if(b.room===room)return '같은 면접실에 다른 직접 예약이 이미 있습니다.';
+  if(uiStudentNames(b.student).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 예약이 있습니다.';
+  if(kind==='practice'&&b.kind==='practice')continue;
+  if(b.teacher===name)return '같은 교시에 선생님과 면접 예약이 있습니다.';
+  if(b.room===room)return '선생님과 면접 또는 개인연습과 중복 예약할 수 없습니다.';
  }
  return '';
 }
-async function bookRoom(room,p){
- const date=ui.date,info=usageInfo(date,p,room);
- if(info.kind==='free'){
-  const entered=prompt(fmtDate(date)+' '+p+'교시 '+room+'\n면접 학생 이름을 입력하세요.');
-  if(!entered?.trim())return;
-  const student=confirmStudentClassesInText(entered);
-  if(!student)return;
-  const conflict=bookingConflictUI(date,p,room,student.trim());
-  if(conflict){state.error=conflict;render();return;}
-  try{await apiCall('createManualBooking',{token:state.token,dateKey:date,period:p,room,student:student.trim()});state.notice='직접 예약했습니다.';await refreshState(true);}
-  catch(e){state.error=e.message;render();}
- }else if(info.kind==='manual'&&info.booking.teacher===state.auth.name)openBookingEditor(info.booking.id);
+function renderNewBookingModal(){
+ const b=ui.newBooking;if(!b)return '';
+ return '<div id="ygBookOverlay" class="yg-edit-overlay"><section class="yg-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="ygBookTitle">'+
+ '<form id="ygBookForm"><h2 id="ygBookTitle">면접실 예약</h2>'+
+ '<p>'+esc(fmtDate(b.dateKey))+' · '+esc(b.period)+'교시 · '+esc(b.room)+'</p>'+
+ '<div class="yg-edit-fields">'+
+ '<label>예약 유형<select id="ygBookKind"><option value="interview">선생님과 면접</option><option value="practice">개인연습</option></select></label>'+
+ '<label>학생 이름<input id="ygBookStudent" type="text" maxlength="300" required autocomplete="off" placeholder="학생 이름을 쉼표로 구분"></label>'+
+ '</div>'+
+ (ui.bookingError?'<div role="alert" class="yg-edit-error">'+esc(ui.bookingError)+'</div>':'')+
+ '<div class="yg-edit-actions"><button type="submit" class="btn primary"'+(ui.bookingSaving?' disabled':'')+'>예약 저장</button>'+
+ '<button type="button" id="ygBookClose" class="btn">닫기</button></div></form></section></div>';
+}
+function bookRoom(room,p){
+ const info=usageInfo(ui.date,p,room);
+ if(info.kind==='manual'&&info.booking?.teacher===state.auth?.name){openBookingEditor(info.booking.id);return;}
+ if(!['free','practice'].includes(info.kind)||(info.kind==='free'&&teacherBusyAt(ui.date,p)))return;
+ ui.newBooking={dateKey:ui.date,period:p,room};ui.bookingError='';ui.bookingSaving=false;render();
+ qs('#ygBookStudent')?.focus();
+}
+async function saveNewBooking(){
+ if(!ui.newBooking||ui.bookingSaving)return;
+ const b=ui.newBooking;
+ const entered=(qs('#ygBookStudent')?.value||'').trim();
+ const kind=qs('#ygBookKind')?.value||'interview';
+ if(!entered){ui.bookingError='학생 이름을 입력해 주세요.';render();return;}
+ const student=confirmStudentClassesInText(entered);
+ if(student===null)return;
+ const conflict=bookingConflictUI(b.dateKey,b.period,b.room,student,'',kind);
+ if(conflict){ui.bookingError=conflict;render();return;}
+ ui.bookingSaving=true;ui.bookingError='';
+ const button=qs('#ygBookForm button[type="submit"]');if(button)button.disabled=true;
+ try{
+  await apiCall('createManualBooking',{token:state.token,dateKey:b.dateKey,period:b.period,room:b.room,student,kind});
+  ui.newBooking=null;ui.bookingSaving=false;state.notice='면접실을 예약했습니다.';
+  await refreshState(true);
+ }catch(e){ui.bookingSaving=false;ui.bookingError=String(e.message||'예약에 실패했습니다.');render();}
+}
+function closeNewBooking(){
+ if(ui.bookingSaving)return;
+ ui.newBooking=null;ui.bookingError='';render();
 }
 async function cancelBooking(id){
  if(!confirm('이 직접 예약을 취소하시겠습니까?'))return;
@@ -353,6 +385,9 @@ function bindDashEvents(){
  qsa('[data-yg-cancel]').forEach(btn=>btn.addEventListener('click',()=>cancelBooking(btn.dataset.ygCancel)));
  qsa('[data-yg-edit]').forEach(btn=>btn.addEventListener('click',()=>openBookingEditor(btn.dataset.ygEdit)));
  qs('#ygEditBookingForm')?.addEventListener('submit',e=>{e.preventDefault();saveBookingEdit();});
+ qs('#ygBookForm')?.addEventListener('submit',e=>{e.preventDefault();saveNewBooking();});
+ qs('#ygBookClose')?.addEventListener('click',closeNewBooking);
+ qs('#ygBookOverlay')?.addEventListener('click',e=>{if(e.target.id==='ygBookOverlay')closeNewBooking();});
  qs('#ygEditClose')?.addEventListener('click',closeBookingEditor);
  qs('#ygEditDelete')?.addEventListener('click',()=>{if(ui.editBookingId)cancelBooking(ui.editBookingId);});
  qs('#ygEditOverlay')?.addEventListener('click',e=>{if(e.target.id==='ygEditOverlay')closeBookingEditor();});
