@@ -16,7 +16,7 @@ const ROOM_CHOICES = ['미정','면접지도실','과학실1','과학실2','특�
 const SHEETS = {
   sessions: ['id','team','group','dateText','period','slotIndex','teacher','teachers','students','prompt','pdfFile','classPeriod','location','updatedAt'],
   users: ['name','passwordHash','updatedAt'],
-  bookings: ['id','dateKey','period','room','teacher','student','createdAt'],
+  bookings: ['id','dateKey','period','room','teacher','student','createdAt','kind'],
   roomUses: ['id','room','weekday','dateKey','period','label','createdBy','updatedAt'],
   history: ['id','actor','action','detail','createdAt'],
   materials: ['id','sessionId','team','kind','fileName','fileId','mimeType','student','canonical','uploader','createdAt']
@@ -96,6 +96,7 @@ function dispatch_(payload) {
     case 'uploadSchedule': return uploadSchedule_(payload);
     case 'changeSession': return changeSession_(payload);
     case 'createManualBooking': return createManualBooking_(payload);
+    case 'updateManualBooking': return updateManualBooking_(payload);
     case 'cancelManualBooking': return cancelManualBooking_(payload);
     case 'addRoomUse': return addRoomUse_(payload);
     case 'deleteRoomUse': return deleteRoomUse_(payload);
