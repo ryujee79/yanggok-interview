@@ -468,9 +468,10 @@ function studentRoomStatus(date,p,room){
  const ownBooking=(state.data?.manualBookings||[]).find(x=>x.dateKey===date&&Number(x.period)===p&&x.room===room);
  if(ownBooking)return {kind:ownBooking.kind==='practice'?'own-practice':'own-interview',label:teacherStudents(ownBooking.teacher,ownBooking.student)};
  if(!available)return {kind:'unknown',label:'확인 불가'};
- if(occ.some(x=>['classuse','session','interview','manual'].includes(x.kind)))return {kind:'other-busy',label:'수업 또는 면접 예약'};
+ if(occ.some(x=>x.kind==='classuse'))return {kind:'other-class',label:'수업'};
+ if(occ.some(x=>['session','interview','manual'].includes(x.kind)))return {kind:'other-interview',label:'선생님과 면접'};
  if(occ.some(x=>x.kind==='practice'))return {kind:'other-practice',label:'개인연습'};
- return {kind:'free',label:'비어 있음'};
+ return {kind:'free',label:''};
 }
 function renderStudentRooms(){
  const date=ui.studentDate;
@@ -491,7 +492,7 @@ function renderStudentRooms(){
  '<button type="button" class="btn" id="ygStudentNext" aria-label="다음날">›</button></div></div>'+
  '<div class="yg-student-room-scroll"><table class="yg-rooms"><thead><tr><th>교시</th>'+
  rooms.map(room=>'<th>'+esc(room)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
- '<div class="yg-student-legend"><span class="mine">내 면접 일정</span><span class="busy">수업·면접 예약</span><span class="practice">개인연습</span></div>'+ 
+ '<div class="yg-student-legend"><span class="mine">내 면접 일정</span><span class="class">수업</span><span class="interview">선생님과 면접</span><span class="practice">개인연습</span></div>'+ 
  (available?'':'<div class="alert" role="status">전체 면접실 현황은 서버 연결이 완료되지 않아 확인할 수 없습니다. 본인 예약만 표시되며, 나머지 칸은 예약 가능을 뜻하지 않습니다.</div>')+
  '</section>';
 }
