@@ -237,6 +237,12 @@ async function saveBookingEdit(){
   student:(qs('#ygEditStudent')?.value||'').trim(),
   kind:qs('#ygEditKind')?.value||'interview'
  };
+ if(payload.kind==='practice'&&!String(state.data?.version||'').includes('practice-bookings-live-v1')){
+  ui.editError='서버의 개인연습 예약 기능이 아직 반영되지 않았습니다. 기존 예약은 유지됩니다.';
+  ui.editDraft=payload;
+  render();
+  return;
+ }
  const confirmedStudent=confirmStudentClassesInText(payload.student);
  if(confirmedStudent===null)return;
  payload.student=confirmedStudent;
@@ -313,6 +319,12 @@ async function saveNewBooking(){
  if(!entered){ui.bookingError='학생 이름을 입력해 주세요.';render();return;}
  const student=confirmStudentClassesInText(entered);
  if(student===null)return;
+ if(kind==='practice'&&!String(state.data?.version||'').includes('practice-bookings-live-v1')){
+  ui.newBooking.student=entered;
+  ui.bookingError='서버의 개인연습 예약 기능이 아직 반영되지 않았습니다. 해당 예약은 저장되지 않았습니다.';
+  render();
+  return;
+ }
  const conflict=bookingConflictUI(b.dateKey,b.period,b.room,student,'',kind);
  if(conflict){ui.newBooking.student=entered;ui.bookingError=conflict;render();return;}
  ui.bookingSaving=true;ui.bookingError='';
