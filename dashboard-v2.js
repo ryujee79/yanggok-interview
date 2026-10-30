@@ -58,7 +58,7 @@ function renderTimetable(){
   const text=interviewKind?heading+'\n('+a.names.join(',')+')'+(a.rooms.length?'\n'+a.rooms.join(','):''):heading;
   const color=a.hasSession?'yg-interview':a.hasPractice?'yg-practice-lesson':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
   const actionLabel=d+' '+roomWeekday(d)+' '+p+'교시 예약 및 수정';
-  return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(actionLabel)+'"><button type="button" class="yg-timetable-book" data-yg-slot="'+esc(d)+'|'+p+'" aria-label="'+esc(actionLabel)+'">'+(text?esc(text):'<span class="yg-timetable-add">+ 예약</span>')+'</button></td>';
+  return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'" data-yg-slot="'+esc(d)+'|'+p+'" role="button" tabindex="0" aria-label="'+esc(actionLabel)+'">'+(text?esc(text):'')+'</td>';
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
@@ -414,7 +414,8 @@ function bindDashEvents(){
  qs('#ygPrev')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,-1);render();});
  qs('#ygNext')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,1);render();});
  qs('#ygDate')?.addEventListener('change',e=>{if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){ui.date=e.target.value;render();}});
- qs('#ygPanelTimetable')?.addEventListener('click',e=>{const btn=e.target.closest('[data-yg-slot]');if(!btn)return;const [date,p]=btn.dataset.ygSlot.split('|');openTimetableBooking(date,Number(p));});
+ qs('#ygPanelTimetable')?.addEventListener('click',e=>{const cell=e.target.closest('[data-yg-slot]');if(!cell)return;const [date,p]=cell.dataset.ygSlot.split('|');openTimetableBooking(date,Number(p));});
+ qs('#ygPanelTimetable')?.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const cell=e.target.closest('[data-yg-slot]');if(!cell)return;e.preventDefault();const [date,p]=cell.dataset.ygSlot.split('|');openTimetableBooking(date,Number(p));});
  qsa('[data-yg-book]').forEach(btn=>btn.addEventListener('click',()=>{const [room,p]=btn.dataset.ygBook.split('|');bookRoom(decodeURIComponent(room),Number(p));}));
  qsa('[data-yg-cancel]').forEach(btn=>btn.addEventListener('click',()=>cancelBooking(btn.dataset.ygCancel)));
  qsa('[data-yg-edit]').forEach(btn=>btn.addEventListener('click',()=>openBookingEditor(btn.dataset.ygEdit)));
