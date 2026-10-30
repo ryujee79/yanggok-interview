@@ -48,26 +48,73 @@ function changeSession_(payload) {
   return { session: candidate };
 }
 
-function createManualBooking_(payload) {
-  const auth = requireAuth_(payload, 'teacher');
+function validateManualBooking_(payload, teacher, excludeId) {
   const dateKey = String(payload.dateKey || '');
   const period = Number(payload.period);
   const room = String(payload.room || '');
   const student = String(payload.student || '').trim();
-  if (!/^2026-\d{2}-\d{2}$/.test(dateKey) || !Number.isInteger(period) || period < 1 || period > 8 || !ROOM_CHOICES.includes(room) || room === '미정' || !student) throw new Error('예약 정보를 확인해 주세요.');
-  const roomUse = readObjects_('roomUses').map(normalizeNumbers_).find(x => roomUseMatches_(x, dateKey, period, room));
-  if (roomUse) throw new Error(room + '은 ' + period + '교시에 ' + roomUse.label + '이 있어 선택할 수 없습니다.');
+  const kind = payload.kind === 'practice' ? 'practice' : 'interview';
+  if (!/^2026-\d{2}-\d{2}$/.test(dateKey) || !Number.isInteger(period) || period < 1 || period > 8 ||
+      !ROOM_CHOICES.includes(room) || room === '미정' || !student) throw new Error('예약 정보를 확인해 주세요.');
+  const classUse = readObjects_('roomUses').map(normalizeNumbers_).find(x => roomUseMatches_(x,dateKey,period,room));
+  if (classUse) throw new Error(room + '은 ' + period + '교시에 수업 또는 행사로 사용 중입니다.');
+  const students = new Set(bookingStudentNames_(student).map(x => x.replace(/[（(].*[）)]$/, '').trim()));
   const sessions = readObjects_('sessions').map(decodeSession_);
-  const sessionConflict = sessions.find(s => dateKeyForDateText_(s.dateText) === dateKey && Number(s.classPeriod) === period && ((s.teachers || []).includes(auth.name) || s.students.includes(student) || (s.location !== '미정' && s.location === room)));
-  if (sessionConflict) throw new Error('해당 교시에는 기존 제시문 면접 일정과 겹치는 교사·학생·장소가 있습니다.');
+  for (const s of sessions) {
+    if (dateKeyForDateText_(s.dateText) !== dateKey || Number(s.classPeriod) !== period) continue;
+    if ((s.teachers || []).includes(teacher) || (s.students || []).some(x => students.has(x)) ||
+        (s.location && s.location !== '미정' && s.location === room))
+      throw new Error('해당 교시에는 기존 제시문 면접의 교사·학생 또는 면접실과 겹칩니다.');
+  }
   const bookings = readObjects_('bookings').map(normalizeNumbers_);
-  const bookingConflict = bookings.find(b => b.dateKey === dateKey && Number(b.period) === period && (b.teacher === auth.name || b.student === student || b.room === room));
-  if (bookingConflict) throw new Error('해당 교시에는 이미 직접 예약된 교사·학생·장소가 있습니다.');
-  const booking = { id: 'manual-' + new Date().getTime() + '-' + Math.random().toString(36).slice(2,8), dateKey, period, room, teacher: auth.name, student, createdAt: new Date().toISOString() };
-  bookings.push(booking);
-  writeObjects_('bookings', bookings);
-  addHistory_(auth.name, '면접실 직접 예약', dateKey + ' ' + period + '교시 ' + room + ' · ' + student);
-  return { booking };
+  for (const b of bookings) {
+    if (b.id === excludeId || b.dateKey !== dateKey || Number(b.period) !== period) continue;
+    if (bookingStudentNames_(b.student).some(x => students.has(x.replace(/[（(].*[）)]$/, '').trim())))
+      throw new Error('해당 학생에게 같은 교시 예약이 있습니다.');
+    // Two independent practices may use the same room, including those scheduled by one teacher.
+    if (kind === 'practice' && bookingKind_(b) === 'practice') continue;
+    if (b.room === room || b.teacher === teacher)
+      throw new Error('선생님과 면접 또는 수업이 있어 중복 예약할 수 없습니다.');
+  }
+  return {dateKey, period, room, student, kind, bookings};
+}
+
+function createManualBooking_(payload) {
+  const auth = requireAuth_(payload, 'teacher');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const x = validateManualBooking_(payload, auth.name, '');
+    const booking = {
+      id:'manual-' + new Date().getTime() + '-' + Math.random().toString(36).slice(2,8),
+      dateKey:x.dateKey,period:x.period,room:x.room,teacher:auth.name,
+      student:x.student,createdAt:new Date().toISOString(),kind:x.kind
+    };
+    x.bookings.push(booking);
+    writeObjects_('bookings', x.bookings);
+    addHistory_(auth.name, '면접실 직접 예약', x.dateKey+' '+x.period+'교시 '+x.room+' · '+(x.kind==='practice'?'개인연습':'선생님과 면접')+' · '+x.student);
+    return {booking};
+  } finally { lock.releaseLock(); }
+}
+
+function updateManualBooking_(payload) {
+  const auth = requireAuth_(payload, 'teacher');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const id = String(payload.id || '');
+    const existing = readObjects_('bookings').map(normalizeNumbers_).find(b => b.id===id);
+    if (!existing || existing.teacher !== auth.name) throw new Error('본인의 예약만 수정할 수 있습니다.');
+    const x = validateManualBooking_({
+      dateKey:payload.dateKey,period:payload.period,room:payload.room,
+      student:payload.student,kind:payload.kind == null ? bookingKind_(existing) : payload.kind
+    },auth.name,id);
+    const booking = Object.assign({},existing,{dateKey:x.dateKey,period:x.period,room:x.room,student:x.student,kind:x.kind});
+    const next = x.bookings.map(b => b.id===id ? booking : b);
+    writeObjects_('bookings',next);
+    addHistory_(auth.name,'면접실 직접 예약 수정',x.dateKey+' '+x.period+'교시 '+x.room+' · '+x.student);
+    return {booking};
+  } finally { lock.releaseLock(); }
 }
 
 function cancelManualBooking_(payload) {
