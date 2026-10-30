@@ -29,7 +29,7 @@
   <script>
     // Load the current dashboard on every page visit; students previously saw a cached legacy view.
     const dashboardScript = document.createElement('script');
-    dashboardScript.src = './dashboard-v2.js?build=20261030-snapshot-room-data&fresh=' + Date.now();
+    dashboardScript.src = './dashboard-v2.js?build=20261030-teacher-timetable-booking&fresh=' + Date.now();
     dashboardScript.onload = () => {
       if (typeof render === 'function' && state?.auth?.role === 'student' && state?.data) render();
     };
