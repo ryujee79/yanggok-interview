@@ -25,6 +25,8 @@ function getSheet_(key) {
     const headers = SHEETS[key];
     sheet.getRange(1,1,1,headers.length).setValues([headers]);
   }
+  // Add a new type column without shifting or rewriting historic reservations.
+  if (key === 'bookings' && sheet.getRange(1,8).getValue() !== 'kind') sheet.getRange(1,8).setValue('kind');
   return sheet;
 }
 
@@ -141,4 +143,29 @@ function roomUseMatches_(use, dateKey, period, room) {
   if (use.dateKey) return use.dateKey === dateKey;
   if (!use.weekday) return false;
   return new Date(dateKey + 'T00:00:00').getDay() === Number(use.weekday);
+}
+
+// Old reservations have no kind and remain teacher-led interviews.
+function bookingKind_(booking) { return booking && booking.kind === 'practice' ? 'practice' : 'interview'; }
+function bookingStudentNames_(value) {
+  return String(value || '').split(/[,，、·\/＆&+\n]+/).map(x => x.trim()).filter(Boolean);
+}
+function bookingBelongsToStudent_(booking, auth) {
+  return bookingStudentNames_(booking.student).some(token => {
+    const name = token.replace(/\s*[（(][^）)]*[）)]\s*$/, '').trim();
+    if (name !== auth.name) return false;
+    if (auth.name !== '김소율') return true;
+    const match = token.match(/[（(]\s*(\d+)반\s*[）)]/);
+    return !!match && Number(match[1]) === Number(auth.classNo);
+  });
+}
+function roomAvailabilitySnapshot_(sessions,bookings,uses) {
+  const blocks = [];
+  uses.forEach(u => blocks.push({room:u.room,dateKey:u.dateKey||'',weekday:Number(u.weekday||0),period:Number(u.period),kind:'classuse'}));
+  sessions.forEach(s => {
+    if (Number(s.classPeriod) >= 1 && s.location && s.location !== '미정')
+      blocks.push({room:s.location,dateKey:dateKeyForDateText_(s.dateText),period:Number(s.classPeriod),kind:'session'});
+  });
+  bookings.forEach(b => blocks.push({room:b.room,dateKey:b.dateKey,period:Number(b.period),kind:bookingKind_(b)}));
+  return blocks;
 }

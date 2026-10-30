@@ -93,7 +93,10 @@ function getState_(payload) {
       (['prompt','solution'].includes(m.kind) && teams.has(m.team)) ||
       (['usedZip','unusedZip'].includes(m.kind) && teams.has(m.team))
     ));
-    return { auth, sessions, manualBookings: [], roomUses: [], history: [], materials: visibleMaterials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
+    const ownBookings = bookings.filter(b => bookingBelongsToStudent_(b,auth));
+    const roomOccupancy = roomAvailabilitySnapshot_(sessionsAll,bookings,roomUses);
+    // Room occupancy has no other students' names or teacher credentials.
+    return { auth, sessions, manualBookings: ownBookings, roomUses: [], roomOccupancy, history: [], materials: visibleMaterials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
   }
   return { auth, sessions: sessionsAll, manualBookings: bookings, roomUses, history, materials, roomChoices: ROOM_CHOICES, version: APP_VERSION };
 }
