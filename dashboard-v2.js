@@ -35,7 +35,7 @@ function allEntries(){
 function weekDates(date){const ix=dayIndex(date),offset=ix<0?(new Date(date+'T12:00:00').getDay()===0?-6:-5): -ix;const first=dateOffset(date,offset);return Array.from({length:5},(_,i)=>dateOffset(first,i));}
 function atSlot(date,p){
  const sessions=(state.data?.sessions||[]).filter(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s));
- const manuals=mineBookings().filter(b=>b.dateKey===date&&Number(b.period)===p);
+ const manuals=mineBookings().filter(b=>b.kind!=='practice'&&b.dateKey===date&&Number(b.period)===p);
  const allNames=[...sessions.flatMap(s=>s.students||[]),...manuals.flatMap(b=>uiStudentNames(b.student))].filter(Boolean);
  const allRooms=[...sessions.map(s=>s.location),...manuals.map(b=>b.room)].map(r=>String(r||'').trim()).filter(Boolean);
  return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,hasPractice:manuals.some(b=>b.kind==='practice'),names:[...new Set(allNames)],rooms:[...new Set(allRooms)]};
@@ -61,11 +61,11 @@ function renderTimetable(){
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
-  '<div class="yg-calendar-note">회색: 수업 · 초록: 제시문 면접 · 노랑: 선생님과 면접 · 파랑: 개인연습 (수업과 면접이 겹치면 면접 종류의 색상 적용)</div>';
+  '<div class="yg-calendar-note">회색: 수업 · 초록: 제시문 면접 · 노랑: 선생님과 면접</div>';
 }
 function teacherBusyAt(date,p){
  return (state.data?.sessions||[]).some(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s))||
-        mineBookings().some(b=>b.dateKey===date&&Number(b.period)===p);
+        mineBookings().some(b=>b.kind!=='practice'&&b.dateKey===date&&Number(b.period)===p);
 }
 function classTeacherLabel(label){
  const str=String(label||'').trim(),parts=str.split('·').map(x=>x.trim()).filter(Boolean);
@@ -87,15 +87,14 @@ function renderRooms(){
  const rows=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+rooms.map(r=>{
   const info=usageInfo(day,p,r),kind=info.kind==='class'?'classuse':info.kind==='interview'?'session':info.kind;
   const mine=kind==='manual'?info.booking?.teacher===state.auth.name:
-             kind==='practice'?(info.bookings||[]).some(b=>b.teacher===state.auth.name):
+             kind==='practice'?false:
              kind==='session'?(info.session?.teacher===state.auth.name||(info.session?.teachers||[]).includes(state.auth.name)):false;
-  const busy=kind==='free'&&teacherBusyAt(day,p);
-  const canAct=(kind==='free'&&!busy)||(kind==='manual'&&mine)||kind==='practice';
-  const emptyDueToBusy=kind==='free'&&busy;
-  const tag=kind==='free'&&!emptyDueToBusy?'예약 가능':kind==='practice'?'개인연습 · 중복 가능':'';
+  const canAct=kind==='free'||(kind==='manual'&&mine)||kind==='practice';
+  const emptyDueToBusy=false;
+  const tag=kind==='free'?'예약 가능':'';
   const detail=emptyDueToBusy?'':kind==='free'?'':kind==='classuse'?classTeacherLabel(info.label||info.text):
      kind==='manual'?teacherStudents(info.booking.teacher,info.booking.student):
-     kind==='practice'?(info.bookings||[]).map(b=>teacherStudents(b.teacher,b.student)).join('\n'):
+     kind==='practice'?(info.bookings||[]).map(b=>b.displayStudent||b.student).join('\n'):
      teacherStudents(info.session?.teacher,info.session?.students||[]);
   const detailLines=String(detail||'').split('\n');
   const hasTeacher=detailLines.length>1&&/T$/.test(detailLines[0]);
@@ -110,7 +109,7 @@ function renderRooms(){
 function itemHtml(entry){
  const s=entry.data;
  if(entry.type==='manual'){
-  return '<div class="yg-session yg-manual'+(s.kind==='practice'?' yg-practice':'')+'"><div class="yg-manual-actions"><div><div class="yg-s-title">'+esc(fmtDate(s.dateKey))+' · '+esc(s.period)+'교시 · '+(s.kind==='practice'?'개인연습':'선생님과 면접')+'</div><div class="yg-s-meta">'+esc(s.student||'')+' · '+esc(s.room||'')+' · '+esc(s.teacher||'')+'</div></div>'+
+  return '<div class="yg-session yg-manual'+(s.kind==='practice'?' yg-practice':'')+'"><div class="yg-manual-actions"><div><div class="yg-s-title">'+esc(fmtDate(s.dateKey))+' · '+esc(s.period)+'교시 · '+(s.kind==='practice'?'개인연습':'선생님과 면접')+'</div><div class="yg-s-meta">'+esc(s.kind==='practice'?(s.displayStudent||s.student||'')+' · '+(s.room||''):(s.student||'')+' · '+(s.room||'')+' · '+(s.teacher||''))+'</div></div>'+
   (s.teacher===state.auth.name?'<div class="yg-manual-buttons"><button type="button" class="btn small" data-yg-edit="'+esc(s.id)+'">예약 수정</button><button type="button" class="btn small danger" data-yg-cancel="'+esc(s.id)+'">예약 취소</button></div>':'')+'</div></div>';
  }
  const st=s.students||[],sub=firstLine(s.prompt);
@@ -277,16 +276,15 @@ function bookingConflictUI(date,period,room,student,excludeBookingId,kind='inter
  }
  for(const session of state.data?.sessions||[]){
   if(dateKeyFromText(session.dateText)!==date||sessionPeriod(session)!==period)continue;
-  if((session.teachers||splitTeachers(session.teacher)).includes(name))return '같은 교시에 이미 제시문 면접이 있습니다.';
+  if(kind!=='practice'&&(session.teachers||splitTeachers(session.teacher)).includes(name))return '같은 교시에 이미 제시문 면접이 있습니다.';
   if((session.students||[]).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 제시문 면접이 있습니다.';
   if(session.location===room)return '같은 면접실에 제시문 면접이 있습니다.';
  }
  for(const b of state.data?.manualBookings||[]){
   if(b.id===excludeBookingId||b.dateKey!==date||Number(b.period)!==period)continue;
   if(uiStudentNames(b.student).some(n=>studentSet.has(n)))return '해당 학생에게 같은 교시 예약이 있습니다.';
-  if(kind==='practice'&&b.kind==='practice')continue;
-  if(b.teacher===name)return '같은 교시에 선생님과 면접 예약이 있습니다.';
-  if(b.room===room)return '선생님과 면접 또는 개인연습과 중복 예약할 수 없습니다.';
+  if(b.room===room&&!(kind==='practice'&&b.kind==='practice'))return '선생님과 면접 또는 개인연습과 중복 예약할 수 없습니다.';
+  if(kind!=='practice'&&b.kind!=='practice'&&b.teacher===name)return '같은 교시에 선생님과 면접 예약이 있습니다.';
  }
  return '';
 }
@@ -306,7 +304,7 @@ function renderNewBookingModal(){
 function bookRoom(room,p){
  const info=usageInfo(ui.date,p,room);
  if(info.kind==='manual'&&info.booking?.teacher===state.auth?.name){openBookingEditor(info.booking.id);return;}
- if(!['free','practice'].includes(info.kind)||(info.kind==='free'&&teacherBusyAt(ui.date,p)))return;
+ if(!['free','practice'].includes(info.kind))return;
  ui.newBooking={dateKey:ui.date,period:p,room,kind:info.kind==='practice'?'practice':'interview'};ui.bookingError='';ui.bookingSaving=false;render();
  qs('#ygBookStudent')?.focus();
 }
@@ -484,12 +482,18 @@ function studentRoomStatus(date,p,room){
  const occ=(occupancy||[]).filter(u=>u.room===room&&Number(u.period)===p&&(u.dateKey?u.dateKey===date:Number(u.weekday)===new Date(date+'T12:00:00').getDay()));
  const ownSession=(state.data?.sessions||[]).find(x=>dateKeyFromText(x.dateText)===date&&sessionPeriod(x)===p&&x.location===room);
  if(ownSession)return {kind:'own-session',label:teacherStudents(ownSession.teacher,ownSession.students||[])};
- const ownBooking=(state.data?.manualBookings||[]).find(x=>x.dateKey===date&&Number(x.period)===p&&x.room===room);
- if(ownBooking)return {kind:ownBooking.kind==='practice'?'own-practice':'own-interview',label:teacherStudents(ownBooking.teacher,ownBooking.student)};
+ const ownBooking=(state.data?.manualBookings||[]).find(x=>x.kind!=='practice'&&x.dateKey===date&&Number(x.period)===p&&x.room===room);
+ if(ownBooking)return {kind:'own-interview',label:teacherStudents(ownBooking.teacher,ownBooking.student)};
  if(!available)return {kind:'unknown',label:'확인 불가'};
  if(occ.some(x=>x.kind==='classuse'))return {kind:'other-class',label:'수업'};
  if(occ.some(x=>['session','interview','manual'].includes(x.kind)))return {kind:'other-interview',label:'선생님과 면접'};
- if(occ.some(x=>x.kind==='practice'))return {kind:'other-practice',label:'개인연습'};
+ const practices=occ.filter(x=>x.kind==='practice');
+ if(practices.length){
+   const labels=practices.flatMap(x=>String(x.label||'').split('\n')).map(x=>x.trim()).filter(Boolean);
+   const own=(state.data?.manualBookings||[]).filter(x=>x.kind==='practice'&&x.dateKey===date&&Number(x.period)===p&&x.room===room);
+   own.forEach(x=>String(x.displayStudent||'').split('\n').filter(Boolean).forEach(label=>labels.push(label)));
+   return {kind:'other-practice',label:[...new Set(labels)].join('\n')||'개인연습'};
+ }
  return {kind:'free',label:''};
 }
 function renderStudentRooms(){
