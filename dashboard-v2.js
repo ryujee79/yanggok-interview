@@ -61,7 +61,7 @@ function renderTimetable(){
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
-  '<div class="yg-calendar-note">회색: 수업 · 초록: 제시문 면접 · 노랑: 직접 예약 (수업과 면접이 겹치면 면접 종류의 색상 적용)</div>';
+  '<div class="yg-calendar-note">회색: 수업 · 초록: 제시문 면접 · 노랑: 선생님과 면접 · 파랑: 개인연습 (수업과 면접이 겹치면 면접 종류의 색상 적용)</div>';
 }
 function teacherBusyAt(date,p){
  return (state.data?.sessions||[]).some(s=>dateKeyFromText(s.dateText)===date&&sessionPeriod(s)===p&&isMineSession(s))||
@@ -110,7 +110,7 @@ function renderRooms(){
 function itemHtml(entry){
  const s=entry.data;
  if(entry.type==='manual'){
-  return '<div class="yg-session yg-manual"><div class="yg-manual-actions"><div><div class="yg-s-title">'+esc(fmtDate(s.dateKey))+' · '+esc(s.period)+'교시 · '+(s.kind==='practice'?'개인연습':'선생님과 면접')+'</div><div class="yg-s-meta">'+esc(s.student||'')+' · '+esc(s.room||'')+' · '+esc(s.teacher||'')+'</div></div>'+
+  return '<div class="yg-session yg-manual'+(s.kind==='practice'?' yg-practice':'')+'"><div class="yg-manual-actions"><div><div class="yg-s-title">'+esc(fmtDate(s.dateKey))+' · '+esc(s.period)+'교시 · '+(s.kind==='practice'?'개인연습':'선생님과 면접')+'</div><div class="yg-s-meta">'+esc(s.student||'')+' · '+esc(s.room||'')+' · '+esc(s.teacher||'')+'</div></div>'+
   (s.teacher===state.auth.name?'<div class="yg-manual-buttons"><button type="button" class="btn small" data-yg-edit="'+esc(s.id)+'">예약 수정</button><button type="button" class="btn small danger" data-yg-cancel="'+esc(s.id)+'">예약 취소</button></div>':'')+'</div></div>';
  }
  const st=s.students||[],sub=firstLine(s.prompt);
@@ -191,7 +191,7 @@ function renderEditBookingModal(){
  return '<div id="ygEditOverlay" class="yg-edit-overlay">'+
  '<section class="yg-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="ygEditTitle">'+
  '<form id="ygEditBookingForm"><h2 id="ygEditTitle">직접 예약 수정</h2>'+
- '<p>기존 예약을 유지하면서 학생·날짜·교시·면접실을 변경합니다. 중복 일정은 저장되지 않습니다.</p>'+
+ '<p>기존 예약을 유지하며 학생·예약 유형·날짜·교시·면접실을 변경합니다. 개인연습끼리만 면접실 중복을 허용합니다.</p>'+
  '<div class="yg-edit-fields">'+
  '<label>예약 유형<select id="ygEditKind"><option value="interview"'+(draft.kind!=='practice'?' selected':'')+'>선생님과 면접</option><option value="practice"'+(draft.kind==='practice'?' selected':'')+'>개인연습</option></select></label>'+
  '<label>면접 학생<input id="ygEditStudent" name="student" type="text" required maxlength="300" value="'+esc(draft.student||'')+'" placeholder="학생 이름을 쉼표로 구분"></label>'+
@@ -291,7 +291,7 @@ function renderNewBookingModal(){
  '<p>'+esc(fmtDate(b.dateKey))+' · '+esc(b.period)+'교시 · '+esc(b.room)+'</p>'+
  '<div class="yg-edit-fields">'+
  '<label>예약 유형<select id="ygBookKind"><option value="interview">선생님과 면접</option><option value="practice">개인연습</option></select></label>'+
- '<label>학생 이름<input id="ygBookStudent" type="text" maxlength="300" required autocomplete="off" placeholder="학생 이름을 쉼표로 구분"></label>'+
+ '<label>학생 이름<input id="ygBookStudent" type="text" maxlength="300" required autocomplete="off" value="'+esc(b.student||'')+'" placeholder="학생 이름을 쉼표로 구분"></label>'+
  '</div>'+
  (ui.bookingError?'<div role="alert" class="yg-edit-error">'+esc(ui.bookingError)+'</div>':'')+
  '<div class="yg-edit-actions"><button type="submit" class="btn primary"'+(ui.bookingSaving?' disabled':'')+'>예약 저장</button>'+
@@ -313,7 +313,7 @@ async function saveNewBooking(){
  const student=confirmStudentClassesInText(entered);
  if(student===null)return;
  const conflict=bookingConflictUI(b.dateKey,b.period,b.room,student,'',kind);
- if(conflict){ui.bookingError=conflict;render();return;}
+ if(conflict){ui.newBooking.student=entered;ui.bookingError=conflict;render();return;}
  ui.bookingSaving=true;ui.bookingError='';
  const button=qs('#ygBookForm button[type="submit"]');if(button)button.disabled=true;
  try{
