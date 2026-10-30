@@ -57,7 +57,8 @@ function renderTimetable(){
   const heading=interviewKind?(cls?'수업&':'')+interviewKind:(cls?'수업':'');
   const text=interviewKind?heading+'\n('+a.names.join(',')+')'+(a.rooms.length?'\n'+a.rooms.join(','):''):heading;
   const color=a.hasSession?'yg-interview':a.hasPractice?'yg-practice-lesson':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
-  return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'">'+(text?esc(text):'')+'</td>';
+  const actionLabel=d+' '+roomWeekday(d)+' '+p+'교시 예약 및 수정';
+  return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(actionLabel)+'"><button type="button" class="yg-timetable-book" data-yg-slot="'+esc(d)+'|'+p+'" aria-label="'+esc(actionLabel)+'">'+(text?esc(text):'<span class="yg-timetable-add">+ 예약</span>')+'</button></td>';
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
   '<table class="yg-timetable"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+cells+'</tbody></table>'+
@@ -290,16 +291,35 @@ function bookingConflictUI(date,period,room,student,excludeBookingId,kind='inter
 }
 function renderNewBookingModal(){
  const b=ui.newBooking;if(!b)return '';
+ const fromTimetable=b.source==='timetable';
+ const rooms=(state.data?.roomChoices||[]).filter(r=>r&&r!=='미정');
+ const existing=fromTimetable?mineBookings().filter(x=>x.dateKey===b.dateKey&&Number(x.period)===Number(b.period)):[];
+ const existingHtml=fromTimetable&&existing.length?
+  '<section class="yg-slot-existing"><h3>이 교시의 기존 예약 ('+existing.length+'건)</h3>'+
+  existing.map(x=>'<div class="yg-slot-booking"><div><strong>'+(x.kind==='practice'?'개인연습':'선생님과 면접')+'</strong><span>'+esc(x.kind==='practice'?(x.displayStudent||x.student||''):(x.student||''))+' · '+esc(x.room||'')+'</span></div>'+
+   '<div class="yg-slot-actions"><button type="button" class="btn small" data-yg-slot-edit="'+esc(x.id)+'">예약 수정</button><button type="button" class="btn small danger" data-yg-slot-cancel="'+esc(x.id)+'">예약 취소</button></div></div>').join('')+'</section>':'';
+ const roomSelector=fromTimetable?
+  '<label>면접실<select id="ygBookRoom" required><option value="">실 선택</option>'+
+  rooms.map(r=>'<option value="'+esc(r)+'"'+(r===b.room?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select></label>':'';
  return '<div id="ygBookOverlay" class="yg-edit-overlay"><section class="yg-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="ygBookTitle">'+
- '<form id="ygBookForm"><h2 id="ygBookTitle">면접실 예약</h2>'+
- '<p>'+esc(fmtDate(b.dateKey))+' · '+esc(b.period)+'교시 · '+esc(b.room)+'</p>'+
+ '<form id="ygBookForm"><h2 id="ygBookTitle">'+(fromTimetable?'시간표에서 면접실 예약':'면접실 예약')+'</h2>'+
+ '<p>'+esc(fmtDate(b.dateKey))+' '+esc(roomWeekday(b.dateKey))+' · '+esc(b.period)+'교시'+(fromTimetable?'':' · '+esc(b.room))+'</p>'+
+ existingHtml+
  '<div class="yg-edit-fields">'+
  '<label>예약 유형<select id="ygBookKind"><option value="interview"'+(b.kind!=='practice'?' selected':'')+'>선생님과 면접</option><option value="practice"'+(b.kind==='practice'?' selected':'')+'>개인연습</option></select></label>'+
  '<label>학생 이름<input id="ygBookStudent" type="text" maxlength="300" required autocomplete="off" value="'+esc(b.student||'')+'" placeholder="학생 이름을 쉼표로 구분"></label>'+
+ roomSelector+
  '</div>'+
  (ui.bookingError?'<div role="alert" class="yg-edit-error">'+esc(ui.bookingError)+'</div>':'')+
  '<div class="yg-edit-actions"><button type="submit" class="btn primary"'+(ui.bookingSaving?' disabled':'')+'>예약 저장</button>'+
  '<button type="button" id="ygBookClose" class="btn">닫기</button></div></form></section></div>';
+}
+function openTimetableBooking(date,period){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isInteger(period)||period<1||period>8)return;
+ ui.newBooking={source:'timetable',dateKey:date,period,room:'',kind:'interview',student:''};
+ ui.bookingError='';ui.bookingSaving=false;state.error='';
+ render();
+ qs('#ygBookKind')?.focus();
 }
 function bookRoom(room,p){
  const info=usageInfo(ui.date,p,room);
@@ -313,8 +333,10 @@ async function saveNewBooking(){
  const b=ui.newBooking;
  const entered=(qs('#ygBookStudent')?.value||'').trim();
  const kind=qs('#ygBookKind')?.value||'interview';
- ui.newBooking.kind=kind;
+ const room=b.source==='timetable'?(qs('#ygBookRoom')?.value||''):b.room;
+ ui.newBooking.kind=kind;ui.newBooking.room=room;ui.newBooking.student=entered;
  if(!entered){ui.bookingError='학생 이름을 입력해 주세요.';render();return;}
+ if(!room){ui.bookingError='면접실을 선택해 주세요.';render();return;}
  const student=confirmStudentClassesInText(entered);
  if(student===null)return;
  if(kind==='practice'&&!String(state.data?.version||'').includes('practice-bookings-live-v1')){
@@ -323,12 +345,12 @@ async function saveNewBooking(){
   render();
   return;
  }
- const conflict=bookingConflictUI(b.dateKey,b.period,b.room,student,'',kind);
+ const conflict=bookingConflictUI(b.dateKey,b.period,room,student,'',kind);
  if(conflict){ui.newBooking.student=entered;ui.bookingError=conflict;render();return;}
  ui.bookingSaving=true;ui.bookingError='';
  const button=qs('#ygBookForm button[type="submit"]');if(button)button.disabled=true;
  try{
-  await apiCall('createManualBooking',{token:state.token,dateKey:b.dateKey,period:b.period,room:b.room,student,kind});
+  await apiCall('createManualBooking',{token:state.token,dateKey:b.dateKey,period:b.period,room,student,kind});
   ui.newBooking=null;ui.bookingSaving=false;state.notice='면접실을 예약했습니다.';
   await refreshState(true);
  }catch(e){ui.bookingSaving=false;ui.bookingError=String(e.message||'예약에 실패했습니다.');render();}
@@ -392,11 +414,14 @@ function bindDashEvents(){
  qs('#ygPrev')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,-1);render();});
  qs('#ygNext')?.addEventListener('click',()=>{ui.date=dateOffset(ui.date,1);render();});
  qs('#ygDate')?.addEventListener('change',e=>{if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){ui.date=e.target.value;render();}});
+ qsa('[data-yg-slot]').forEach(btn=>btn.addEventListener('click',()=>{const [date,p]=btn.dataset.ygSlot.split('|');openTimetableBooking(date,Number(p));}));
  qsa('[data-yg-book]').forEach(btn=>btn.addEventListener('click',()=>{const [room,p]=btn.dataset.ygBook.split('|');bookRoom(decodeURIComponent(room),Number(p));}));
  qsa('[data-yg-cancel]').forEach(btn=>btn.addEventListener('click',()=>cancelBooking(btn.dataset.ygCancel)));
  qsa('[data-yg-edit]').forEach(btn=>btn.addEventListener('click',()=>openBookingEditor(btn.dataset.ygEdit)));
  qs('#ygEditBookingForm')?.addEventListener('submit',e=>{e.preventDefault();saveBookingEdit();});
  qs('#ygBookForm')?.addEventListener('submit',e=>{e.preventDefault();saveNewBooking();});
+ qsa('[data-yg-slot-edit]').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.ygSlotEdit;ui.newBooking=null;openBookingEditor(id);}));
+ qsa('[data-yg-slot-cancel]').forEach(btn=>btn.addEventListener('click',()=>cancelBooking(btn.dataset.ygSlotCancel)));
  qs('#ygBookClose')?.addEventListener('click',closeNewBooking);
  qs('#ygBookOverlay')?.addEventListener('click',e=>{if(e.target.id==='ygBookOverlay')closeNewBooking();});
  qs('#ygEditClose')?.addEventListener('click',closeBookingEditor);
