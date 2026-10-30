@@ -3,7 +3,7 @@
 'use strict';
 const lessonsSeed={"고승":[[1,3,5,6],[3,4],[2,4,5,7],[5,6],[1,4]],"권혁":[[1,3,4,6],[2,5],[4,5,7],[2,5,6],[4]],"기윤":[[1,3,4,6],[2,4,6],[3,4,6,7],[2,5,6],[1,3,4]],"김계":[[1,2,4,5],[3,4],[1,4,6,7],[1,3,4,6],[3,4]],"김낙":[[2,5],[1,3,4,6],[4,6],[4,5],[1,4]],"김대":[[1,4,6],[4,5],[3,4,7],[3,5,6],[3,4]],"김병":[[3,4,6],[1,2,5,6],[2,3,5,6],[1,2,4],[2,4]],"김영":[[2,3,5],[4,6],[2,3,5,7],[2,3,5],[2,3]],"김점":[[3,4],[1,5],[1,3,4,7],[1,3,5,6],[2,4]],"김중":[[1,3,4,6],[2,4,5],[1,3,4,6],[1,3,4],[1,4]],"김지":[[1,2,5,6],[2,3,5,6],[1,2,3,5,6],[1,3,4,6],[1,2,4]],"김진":[[3,5,6],[1,2,4,6],[1,4,5,7],[2,3,6],[2,4]],"김희":[[2,4],[1,6],[2,5,6],[1,4,5],[2]],"노석":[[2,3],[1,4,6],[2,4,5,6],[1,2,4,5],[2,4]],"박문":[[2,3,5],[3,4,6],[2,3,5],[1,2,5],[1,2,3]],"박윤":[[1,2,4],[1,2,5,6],[2,3,5],[1,2,4,6],[1,3]],"손유":[[2,4,6],[2,3],[2,3,5,7],[2,4,6],[1,3]],"송대":[[2,4,5],[3,4],[3,4,6,7],[1,2,4,5,6],[2,4]],"신연":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"신해":[[3,5,6],[2,3,5],[1,3,4],[3,4],[3]],"안진":[[1,2,5],[1,3,4,6],[2,3,5,6],[2,4,6],[2,3]],"오중":[[1,3,4,6],[1,2,5],[1,3,5,7],[2,3,6],[2,3]],"유미":[[1,3,4,6],[2,4,5],[1,3,4,5,7],[2,3,5,6],[3,4]],"유은":[[1,2,4,5],[1,2,5,6],[1,3,6,7],[3,6],[1,2]],"유제":[[1,3,5,6],[2,3,5,6],[1,2],[3,4],[1,2]],"유종":[[1,3,5,6],[2,3,5,6],[3,5,7],[2,4,6],[2,3]],"유지":[[1,2,4],[1,2,4,5],[4,5,7],[2,3,5],[1,3,4]],"윤혜":[[1,3,4,6],[2,5],[1,3,5,7],[2,3,6],[3]],"이경":[[2,5],[1,2,4,6],[1,2,4,6],[1,4,5],[1,4]],"이기":[[3,4,6],[3,4],[1,2,4,6],[2,3,5],[3]],"이나":[[1,3,4,6],[3,4,6],[1,3,5,7],[1,2,4,6],[2,3]],"이병":[[2,4,5],[1,3,5],[3,4,6,7],[2,3,5,6],[2,4]],"이석":[[1,5,6],[1,3,4,5],[2,4,6],[1,3,4],[1,2,4]],"이수":[[1,2,3,5,6],[2,3,4,5,6],[1,2,3,5,6,7],[1,2,3,5,6],[1,3,4]],"이주":[[3,5],[1,3],[1,2,6,7],[1,2,4],[1,2]],"이진":[[3,4],[1,4,6],[2,4,5,7],[5,6],[1,3,4]],"인상":[[1,2,5],[1,3,5],[1,2,4,6],[1,3,5],[1,4]],"장덕":[[2,5,6],[1,2,5,6],[1,2,6],[1,3,4],[1,2]],"장현":[[1,2,4],[1,2,5],[1,3,5,7],[2,3,6],[3]],"정수":[[1,2,4,6],[1,2,3],[1,3,5,6],[1,3,4],[2,3]],"조현":[[2,3,5,6],[1,3,5],[1,3,4,7],[1,5],[1,3]],"천세":[[2,4,6],[1,3,4,6],[1,2,5,6],[1,4,6],[2,3]],"최성":[[1,3,4],[2,4,6],[2,4,5,7],[1,2,5,6],[1,3,4]],"홍상":[[2,5],[1,3,4,6],[2,4,6],[1,4,5],[1,2,4]],"황혜":[[1,3,5,6],[2,3,5,6],[1,2,6],[1,3,4],[1,2]]};
 const kstToday=()=>{const f=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const p=k=>f.find(x=>x.type===k).value;return p('year')+'-'+p('month')+'-'+p('day');};
-const ui={scope:'mine',past:false,date:kstToday(),focus:'',searchDraft:'',soyulSearchClass:'',editBookingId:'',editDraft:null,editError:'',editSaving:false,notice:'',noticeTimeout:null};
+const ui={scope:'mine',past:false,date:kstToday(),focus:'',searchDraft:'',soyulSearchClass:'',editBookingId:'',editDraft:null,editError:'',editSaving:false,newBooking:null,bookingError:'',bookingSaving:false,studentDate:kstToday(),notice:'',noticeTimeout:null};
 let activeLessons=lessonsSeed;
 try{const s=JSON.parse(localStorage.getItem('yi-class-timetable-v1')||'null');if(s&&typeof s==='object'&&Object.keys(s).length)activeLessons=s;}catch(_){}
 const legacyRender=render,legacySessionCard=sessionCard;
@@ -38,7 +38,7 @@ function atSlot(date,p){
  const manuals=mineBookings().filter(b=>b.dateKey===date&&Number(b.period)===p);
  const allNames=[...sessions.flatMap(s=>s.students||[]),...manuals.flatMap(b=>uiStudentNames(b.student))].filter(Boolean);
  const allRooms=[...sessions.map(s=>s.location),...manuals.map(b=>b.room)].map(r=>String(r||'').trim()).filter(Boolean);
- return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,names:[...new Set(allNames)],rooms:[...new Set(allRooms)]};
+ return {hasInterview:sessions.length+manuals.length>0,hasSession:sessions.length>0,hasManual:manuals.length>0,hasPractice:manuals.some(b=>b.kind==='practice'),names:[...new Set(allNames)],rooms:[...new Set(allRooms)]};
 }
 function teacherT(name){
  return String(name||'').split(/[·,/&+]/).map(n=>n.trim()).filter(Boolean).map(n=>n.replace(/T$/i,'')+'T').join('·');
@@ -56,7 +56,7 @@ function renderTimetable(){
   const interviewKind=a.hasSession?'제시문면접':a.hasManual?'일반면접':'';
   const heading=interviewKind?(cls?'수업&':'')+interviewKind:(cls?'수업':'');
   const text=interviewKind?heading+'\n('+a.names.join(',')+')'+(a.rooms.length?'\n'+a.rooms.join(','):''):heading;
-  const color=a.hasSession?'yg-interview':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
+  const color=a.hasSession?'yg-interview':a.hasPractice?'yg-practice-lesson':a.hasManual?'yg-manual-lesson':cls?'yg-class':'';
   return '<td class="'+color+' '+(d===ui.date?'yg-current':'')+'" title="'+esc(text)+'">'+(text?esc(text):'')+'</td>';
  }).join('')+'</tr>').join('');
  return (lesson?'':'<div class="yg-missing">이 교사의 수업 시간표가 없습니다. 전체 시간표에서 교사 약칭을 확인해 주세요.</div>')+
@@ -87,28 +87,30 @@ function renderRooms(){
  const rows=Array.from({length:8},(_,i)=>i+1).map(p=>'<tr><th>'+p+'교시</th>'+rooms.map(r=>{
   const info=usageInfo(day,p,r),kind=info.kind==='class'?'classuse':info.kind==='interview'?'session':info.kind;
   const mine=kind==='manual'?info.booking?.teacher===state.auth.name:
+             kind==='practice'?(info.bookings||[]).some(b=>b.teacher===state.auth.name):
              kind==='session'?(info.session?.teacher===state.auth.name||(info.session?.teachers||[]).includes(state.auth.name)):false;
   const busy=kind==='free'&&teacherBusyAt(day,p);
-  const canAct=(kind==='free'&&!busy)||(kind==='manual'&&mine);
+  const canAct=(kind==='free'&&!busy)||(kind==='manual'&&mine)||kind==='practice';
   const emptyDueToBusy=kind==='free'&&busy;
-  const tag=kind==='free'&&!emptyDueToBusy?'예약 가능':'';
+  const tag=kind==='free'&&!emptyDueToBusy?'예약 가능':kind==='practice'?'개인연습 · 중복 가능':'';
   const detail=emptyDueToBusy?'':kind==='free'?'':kind==='classuse'?classTeacherLabel(info.label||info.text):
      kind==='manual'?teacherStudents(info.booking.teacher,info.booking.student):
+     kind==='practice'?(info.bookings||[]).map(b=>teacherStudents(b.teacher,b.student)).join('\n'):
      teacherStudents(info.session?.teacher,info.session?.students||[]);
   const detailLines=String(detail||'').split('\n');
   const hasTeacher=detailLines.length>1&&/T$/.test(detailLines[0]);
   const detailHtml=hasTeacher?'<strong class="yg-room-teacher">'+esc(detailLines[0])+'</strong>'+esc(detailLines.slice(1).join('\n')):esc(detail);
   const cssKind=kind+(emptyDueToBusy?' busy-self':'')+(mine?' is-mine':'');
-  const kindLabel=kind==='manual'?'직접 예약':kind==='session'?'제시문 면접':'';
+  const kindLabel=kind==='manual'?'선생님과 면접':kind==='practice'?'개인연습':kind==='session'?'제시문 면접':'';
   const title=emptyDueToBusy?'':[kindLabel,tag,detail].filter(Boolean).join(' · ');
   return '<td><button class="yg-room-btn '+cssKind+'" '+(canAct?'data-yg-book="'+esc(encodeURIComponent(r))+'|'+p+'"':'disabled')+' title="'+esc(title)+'" aria-label="'+esc(emptyDueToBusy?'빈 칸':title||'예약 가능')+'">'+(tag?'<strong>'+esc(tag)+'</strong>':'')+(detail?'<span class="yg-room-detail">'+detailHtml+'</span>':'')+'</button></td>';
  }).join('')+'</tr>').join('');
- return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">직접 예약</span><span class="session">제시문</span><span class="classuse">수업</span><span class="mine">내 면접 일정</span></div>';
+ return '<div style="overflow:auto"><table class="yg-rooms"><thead><tr><th>교시</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div><div class="yg-room-legend"><span>예약 가능</span><span class="manual">선생님과 면접</span><span class="practice">개인연습</span><span class="session">제시문</span><span class="classuse">수업</span><span class="mine">내 면접 일정</span></div>';
 }
 function itemHtml(entry){
  const s=entry.data;
  if(entry.type==='manual'){
-  return '<div class="yg-session yg-manual"><div class="yg-manual-actions"><div><div class="yg-s-title">'+esc(fmtDate(s.dateKey))+' · '+esc(s.period)+'교시 · 직접 예약</div><div class="yg-s-meta">'+esc(s.student||'')+' · '+esc(s.room||'')+' · '+esc(s.teacher||'')+'</div></div>'+
+  return '<div class="yg-session yg-manual"><div class="yg-manual-actions"><div><div class="yg-s-title">'+esc(fmtDate(s.dateKey))+' · '+esc(s.period)+'교시 · '+(s.kind==='practice'?'개인연습':'선생님과 면접')+'</div><div class="yg-s-meta">'+esc(s.student||'')+' · '+esc(s.room||'')+' · '+esc(s.teacher||'')+'</div></div>'+
   (s.teacher===state.auth.name?'<div class="yg-manual-buttons"><button type="button" class="btn small" data-yg-edit="'+esc(s.id)+'">예약 수정</button><button type="button" class="btn small danger" data-yg-cancel="'+esc(s.id)+'">예약 취소</button></div>':'')+'</div></div>';
  }
  const st=s.students||[],sub=firstLine(s.prompt);
@@ -149,7 +151,7 @@ function dashboardRender(){
  '<section class="yg-panel" id="ygPanelMine"><div class="yg-panel-head"><h2>'+esc(ui.past?'면접 이력':scopeLabel)+'</h2><div class="yg-panel-context"><select id="ygScope" aria-label="일정 범위 선택"><option value="mine"'+(ui.scope==='mine'?' selected':'')+'>나의 일정</option><option value="all"'+(ui.scope==='all'?' selected':'')+'>전체 일정</option><option value="humanities"'+(ui.scope==='humanities'?' selected':'')+'>고려대(인문)</option><option value="yonsei"'+(ui.scope==='yonsei'?' selected':'')+'>연세대</option><option value="natural"'+(ui.scope==='natural'?' selected':'')+'>고려대(자연)팀</option></select><span class="count">'+entries.length+'건 · '+(ui.past?'지난 일정':'오늘 이후')+'</span></div></div><div class="yg-panel-body"><div class="yg-summary-list">'+(entries.length?entries.map(itemHtml).join(''):'<div class="empty">표시할 일정이 없습니다.</div>')+'</div></div></section>'+
  '<section class="yg-panel" id="ygPanelTimetable"><div class="yg-panel-head"><h2>내 시간표 보기</h2><span class="count">'+esc(state.auth.name)+'</span></div><div class="yg-panel-body">'+renderTimetable()+'</div></section>'+
  '<section class="yg-panel" id="ygPanelRooms"><div class="yg-panel-head"><h2>실별 사용 현황</h2><div class="yg-date-tools"><button class="btn" id="ygPrev" aria-label="전날">‹</button><input id="ygDate" type="date" value="'+esc(ui.date)+'"><span id="ygRoomWeekday" class="yg-room-weekday">'+roomWeekday(ui.date)+'</span><button class="btn" id="ygNext" aria-label="다음날">›</button></div></div><div class="yg-panel-body">'+renderRooms()+'</div></section>'+
- '</div></main>'+renderModal()+renderEditBookingModal();
+ '</div></main>'+renderModal()+renderEditBookingModal()+renderNewBookingModal();
  qsa('details[data-yg-detail]').forEach(n=>{if(expanded.has(n.dataset.ygDetail))n.open=true;});
  bindMainEvents();bindDashEvents();
  panelScroll.forEach((position,id)=>{
