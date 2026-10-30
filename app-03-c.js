@@ -3,8 +3,10 @@ function usageInfo(dateKey,period,room){
   if(use)return{kind:'classuse',text:use.label};
   const sess=(state.data.sessions||[]).find(s=>dateKeyFromText(s.dateText)===dateKey&&Number(s.classPeriod)===period&&s.location===room);
   if(sess)return{kind:'session',text:`${sess.teacher} · ${(sess.students||[]).join('·')}`,session:sess};
-  const booking=(state.data.manualBookings||[]).find(b=>b.dateKey===dateKey&&Number(b.period)===period&&b.room===room);
-  if(booking)return{kind:'manual',text:`${booking.teacher} · ${booking.student}`,booking};
+  const bookings=(state.data.manualBookings||[]).filter(b=>b.dateKey===dateKey&&Number(b.period)===period&&b.room===room);
+  const interview=bookings.find(b=>b.kind!=='practice');
+  if(interview)return{kind:'manual',text:`${interview.teacher} · ${interview.student}`,booking:interview,bookings};
+  if(bookings.length)return{kind:'practice',text:bookings.map(b=>`${b.teacher} · ${b.student}`).join(' / '),booking:bookings[0],bookings};
   return{kind:'free',text:'예약'};
 }
 function roomUseMatches(use,dateKey,period,room){ if(use.room!==room||Number(use.period)!==Number(period))return false;if(use.dateKey)return use.dateKey===dateKey;if(!use.weekday)return false;return new Date(dateKey+'T00:00:00').getDay()===Number(use.weekday); }
