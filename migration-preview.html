@@ -7,7 +7,7 @@
   <title>면접실 관리 프로그램</title>
   <link rel="stylesheet" href="./style.css?v=20261024-university-split-1">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="./dashboard-v2.css?v=20261030-teacher-classes-1">
+  <link rel="stylesheet" href="./dashboard-v2.css?v=20261030-timetable-draggable-1">
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
@@ -29,7 +29,7 @@
   <script>
     // Load the current dashboard on every page visit; students previously saw a cached legacy view.
     const dashboardScript = document.createElement('script');
-    dashboardScript.src = './dashboard-v2.js?build=20261030-teacher-class-names&fresh=' + Date.now();
+    dashboardScript.src = './dashboard-v2.js?build=20261030-timetable-draggable-1&fresh=' + Date.now();
     dashboardScript.onload = () => {
       if (typeof render === 'function' && state?.auth?.role === 'student' && state?.data) render();
     };
