@@ -276,3 +276,36 @@
  .yg-manual-actions{flex-wrap:wrap}
  .yg-manual-buttons{width:100%}
 }
+
+/* Requested room status colors; class gray is intentionally darker. */
+.yg-dashboard{--yg-class-bg:#b8c0ca;--yg-class-fg:#253242;--yg-practice-bg:#dbeafe;--yg-practice-fg:#1e40af}
+.yg-dashboard .yg-room-btn.practice,
+.yg-dashboard .yg-timetable td.yg-practice-lesson,
+.yg-dashboard .yg-summary-list .yg-session.yg-practice{
+ background:var(--yg-practice-bg)!important;color:var(--yg-practice-fg)!important;
+}
+.yg-dashboard .yg-room-legend .practice::before{background:#dbeafe!important}
+.room-cell.practice{background:#dbeafe;color:#1e40af}
+
+/* Read-only student occupancy calendar. */
+.yg-student-room-panel{margin-top:14px}
+.yg-student-date-controls{display:flex;align-items:center;gap:6px}
+.yg-student-date-controls input{width:154px;max-width:100%;font-size:12px;padding:6px}
+.yg-student-date-controls .btn{min-width:30px;padding:5px 8px}
+.yg-student-date-controls span{white-space:nowrap;font-size:12px}
+.yg-student-room-scroll{overflow-x:auto}
+.yg-student-room-panel .yg-rooms{min-width:850px;width:100%;table-layout:fixed}
+.yg-student-room-panel .yg-rooms th{background:#edf2f8}
+.yg-student-room-panel .yg-rooms td{padding:2px;height:58px}
+.yg-student-room-cell{min-height:52px;display:flex;align-items:center;justify-content:center;border-radius:5px;padding:5px;text-align:center;font-size:11px;font-weight:650;white-space:pre-line;word-break:keep-all}
+.yg-student-room-cell.free{background:#fbe4ee;color:#9d426f}
+.yg-student-room-cell.other-busy,.yg-student-room-cell.own-interview{background:#fff2b6;color:#80570b}
+.yg-student-room-cell.other-practice,.yg-student-room-cell.own-practice{background:#dbeafe;color:#1e40af}
+.yg-student-room-cell.own-session{background:#dcfce7;color:#166534}
+.yg-student-room-cell.own-session,.yg-student-room-cell.own-interview,.yg-student-room-cell.own-practice{outline:2px solid #dc2626;outline-offset:-2px}
+.yg-student-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#475569}
+.yg-student-legend span::before{content:' ';display:inline-block;width:10px;height:10px;border:1px solid #cbd5e1;margin-right:4px;border-radius:2px}
+.yg-student-legend .mine::before{background:#fff;border:2px solid #dc2626}
+.yg-student-legend .busy::before{background:#fff2b6}
+.yg-student-legend .practice::before{background:#dbeafe}
+@media(max-width:600px){.yg-student-room-panel .panel-head{flex-wrap:wrap}.yg-student-date-controls{width:100%}}
