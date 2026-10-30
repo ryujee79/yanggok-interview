@@ -290,7 +290,7 @@ function renderNewBookingModal(){
  '<form id="ygBookForm"><h2 id="ygBookTitle">면접실 예약</h2>'+
  '<p>'+esc(fmtDate(b.dateKey))+' · '+esc(b.period)+'교시 · '+esc(b.room)+'</p>'+
  '<div class="yg-edit-fields">'+
- '<label>예약 유형<select id="ygBookKind"><option value="interview">선생님과 면접</option><option value="practice">개인연습</option></select></label>'+
+ '<label>예약 유형<select id="ygBookKind"><option value="interview"'+(b.kind!=='practice'?' selected':'')+'>선생님과 면접</option><option value="practice"'+(b.kind==='practice'?' selected':'')+'>개인연습</option></select></label>'+
  '<label>학생 이름<input id="ygBookStudent" type="text" maxlength="300" required autocomplete="off" value="'+esc(b.student||'')+'" placeholder="학생 이름을 쉼표로 구분"></label>'+
  '</div>'+
  (ui.bookingError?'<div role="alert" class="yg-edit-error">'+esc(ui.bookingError)+'</div>':'')+
@@ -301,7 +301,7 @@ function bookRoom(room,p){
  const info=usageInfo(ui.date,p,room);
  if(info.kind==='manual'&&info.booking?.teacher===state.auth?.name){openBookingEditor(info.booking.id);return;}
  if(!['free','practice'].includes(info.kind)||(info.kind==='free'&&teacherBusyAt(ui.date,p)))return;
- ui.newBooking={dateKey:ui.date,period:p,room};ui.bookingError='';ui.bookingSaving=false;render();
+ ui.newBooking={dateKey:ui.date,period:p,room,kind:info.kind==='practice'?'practice':'interview'};ui.bookingError='';ui.bookingSaving=false;render();
  qs('#ygBookStudent')?.focus();
 }
 async function saveNewBooking(){
@@ -309,6 +309,7 @@ async function saveNewBooking(){
  const b=ui.newBooking;
  const entered=(qs('#ygBookStudent')?.value||'').trim();
  const kind=qs('#ygBookKind')?.value||'interview';
+ ui.newBooking.kind=kind;
  if(!entered){ui.bookingError='학생 이름을 입력해 주세요.';render();return;}
  const student=confirmStudentClassesInText(entered);
  if(student===null)return;
