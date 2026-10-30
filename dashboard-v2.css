@@ -312,16 +312,15 @@
 
 .yg-student-room-cell.unknown{background:#f1f5f9;color:#64748b}
 
-/* Shared colors for teacher and student room calendars (2026-10-30).
-   Available: pale red/pink; teacher-led interview: yellow;
-   class: gray; individual practice: blue. Personal bookings keep red outlines. */
+/* Shared room-status palette: prompt interview green; teacher interview yellow.
+   Class gray, practice blue, bookable pale pink. Own reservations retain red outlines. */
 .yg-dashboard{
  --yg-available-bg:#fbe4ee;
  --yg-available-fg:#9d426f;
  --yg-class-bg:#b8c0ca;
  --yg-class-fg:#253242;
- --yg-prompt-bg:#fff2b6;
- --yg-prompt-fg:#80570b;
+ --yg-prompt-bg:#dcfce7;
+ --yg-prompt-fg:#166534;
  --yg-direct-bg:#fff2b6;
  --yg-direct-fg:#80570b;
  --yg-practice-bg:#dbeafe;
@@ -332,11 +331,15 @@
  background:#fbe4ee!important;color:#9d426f!important;
 }
 .yg-dashboard .yg-room-btn.session,
-.yg-dashboard .yg-room-btn.manual,
 .yg-dashboard .yg-timetable td.yg-interview,
-.yg-dashboard .yg-timetable td.yg-manual-lesson,
 .yg-dashboard .yg-summary-list .yg-session:not(.yg-manual),
 .yg-student-only .yg-student-room-cell.own-session,
+.yg-student-only .yg-student-room-cell.other-session{
+ background:#dcfce7!important;color:#166534!important;
+}
+.yg-dashboard .yg-room-btn.manual,
+.yg-dashboard .yg-timetable td.yg-manual-lesson,
+.yg-dashboard .yg-summary-list .yg-session.yg-manual,
 .yg-student-only .yg-student-room-cell.own-interview,
 .yg-student-only .yg-student-room-cell.other-interview{
  background:#fff2b6!important;color:#80570b!important;
@@ -354,6 +357,7 @@
  background:#dbeafe!important;color:#1e40af!important;
 }
 .yg-dashboard .yg-room-legend .session::before,
+.yg-student-only .yg-student-legend .session::before{background:#dcfce7!important}
 .yg-dashboard .yg-room-legend .manual::before,
 .yg-student-only .yg-student-legend .interview::before{background:#fff2b6!important}
 .yg-dashboard .yg-room-legend .classuse::before,
